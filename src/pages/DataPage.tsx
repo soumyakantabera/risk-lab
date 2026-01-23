@@ -31,6 +31,7 @@ import {
 import { ReturnsTimeSeries } from '@/components/charts/RollingVaRChart';
 import { CorrelationHeatmap } from '@/components/charts/CorrelationHeatmap';
 import { ManualDataEntry } from '@/components/data/ManualDataEntry';
+import { MarketDataFetcher } from '@/components/data/MarketDataFetcher';
 
 const sampleDatasets = [
   {
@@ -225,6 +226,9 @@ export default function DataPage() {
           </div>
         </CardContent>
       </Card>
+      
+      {/* Market Data Integration */}
+      <MarketDataFetcher />
       
       {/* Manual Data Entry - Educational */}
       <ManualDataEntry onDataLoad={loadCustomData} />

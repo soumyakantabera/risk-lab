@@ -91,7 +91,7 @@ export default function BacktestPage() {
       <div>
         <h1 className="text-2xl font-bold text-foreground">Backtesting</h1>
         <p className="text-muted-foreground text-sm">
-          Validate VaR models with Kupiec POF test and exception analysis
+          Validate VaR models with Kupiec POF test and Christoffersen conditional coverage test
         </p>
       </div>
       
@@ -207,21 +207,43 @@ export default function BacktestPage() {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
               <Calendar className="h-4 w-4" />
-              Test Statistics
+              Statistical Tests
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div>
                 <p className="text-lg font-mono">{summary?.totalDays || 0}</p>
                 <p className="text-xs text-muted-foreground">Test Days</p>
               </div>
               <div>
-                <p className="text-lg font-mono">
+                <p className={`text-lg font-mono ${summary && summary.kupiecPValue < 0.05 ? 'text-destructive' : 'text-success'}`}>
                   {summary?.kupiecPValue.toFixed(4) || '-'}
                 </p>
                 <p className="text-xs text-muted-foreground">Kupiec p-value</p>
               </div>
+              <div>
+                <p className={`text-lg font-mono ${summary && summary.independencePValue < 0.05 ? 'text-destructive' : 'text-success'}`}>
+                  {summary?.independencePValue.toFixed(4) || '-'}
+                </p>
+                <p className="text-xs text-muted-foreground">Independence p-value</p>
+              </div>
+            </div>
+            <div className="mt-4 pt-4 border-t border-border/30">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">Conditional Coverage (CC)</span>
+                <Badge 
+                  variant={summary && summary.conditionalCoveragePValue >= 0.05 ? 'default' : 'destructive'}
+                  className="font-mono"
+                >
+                  p = {summary?.conditionalCoveragePValue.toFixed(4) || '-'}
+                </Badge>
+              </div>
+              {summary && (
+                <p className="text-xs text-muted-foreground mt-2 italic">
+                  {summary.christoffersenInterpretation}
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>

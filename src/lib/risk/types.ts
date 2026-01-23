@@ -73,6 +73,10 @@ export interface BacktestSummary {
   exceptionRate: number;
   expectedExceptions: number;
   kupiecPValue: number;
+  // Christoffersen tests
+  independencePValue: number;
+  conditionalCoveragePValue: number;
+  christoffersenInterpretation: string;
   status: 'ok' | 'warning' | 'fail';
   statusReason: string;
 }

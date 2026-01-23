@@ -318,6 +318,141 @@ export function kupiecTest(
 }
 
 /**
+ * Christoffersen's Independence Test for VaR backtesting
+ * Tests whether exceptions are serially independent (not clustered)
+ * Returns p-value from LR test with 1 degree of freedom
+ */
+export function christoffersenIndependenceTest(exceptions: boolean[]): number {
+  // Count transitions between exception states
+  let n00 = 0, n01 = 0, n10 = 0, n11 = 0;
+  
+  for (let i = 1; i < exceptions.length; i++) {
+    const prev = exceptions[i - 1];
+    const curr = exceptions[i];
+    if (!prev && !curr) n00++;
+    else if (!prev && curr) n01++;
+    else if (prev && !curr) n10++;
+    else n11++;
+  }
+  
+  const n0 = n00 + n01; // Days following no exception
+  const n1 = n10 + n11; // Days following exception
+  
+  if (n0 === 0 || n1 === 0) {
+    // Not enough transitions to test
+    return 1;
+  }
+  
+  // Transition probabilities under alternative (first-order Markov)
+  const pi01 = n01 / n0; // P(exception | no exception yesterday)
+  const pi11 = n11 / n1; // P(exception | exception yesterday)
+  
+  // Under null: unconditional probability
+  const pi = (n01 + n11) / (n0 + n1);
+  
+  if (pi === 0 || pi === 1) {
+    return 1; // No exceptions or all exceptions
+  }
+  
+  // Log-likelihood under null (independence)
+  const L0 = (n00 + n10) * Math.log(1 - pi) + (n01 + n11) * Math.log(pi);
+  
+  // Log-likelihood under alternative (first-order Markov)
+  let L1 = 0;
+  if (n00 > 0) L1 += n00 * Math.log(1 - pi01);
+  if (n01 > 0) L1 += n01 * Math.log(pi01);
+  if (n10 > 0) L1 += n10 * Math.log(1 - pi11);
+  if (n11 > 0) L1 += n11 * Math.log(pi11);
+  
+  const LR = -2 * (L0 - L1);
+  
+  // Chi-square test with 1 degree of freedom
+  return 1 - jStat.chisquare.cdf(Math.max(0, LR), 1);
+}
+
+/**
+ * Christoffersen's Conditional Coverage Test
+ * Combines Kupiec (unconditional) + Independence tests
+ * Returns p-value from LR test with 2 degrees of freedom
+ */
+export function christoffersenConditionalCoverageTest(
+  exceptions: boolean[],
+  confidenceLevel: number
+): {
+  pValue: number;
+  kupiecPValue: number;
+  independencePValue: number;
+  interpretation: string;
+} {
+  const n = exceptions.length;
+  const x = exceptions.filter(e => e).length;
+  const expectedRate = 1 - confidenceLevel / 100;
+  
+  // Kupiec (unconditional coverage) test
+  const kupiecPValue = kupiecTest(n, x, confidenceLevel);
+  
+  // Independence test
+  const independencePValue = christoffersenIndependenceTest(exceptions);
+  
+  // Combined conditional coverage test
+  // LR_cc = LR_uc + LR_ind (approximately chi-square with 2 df)
+  
+  // Count transitions
+  let n00 = 0, n01 = 0, n10 = 0, n11 = 0;
+  for (let i = 1; i < exceptions.length; i++) {
+    const prev = exceptions[i - 1];
+    const curr = exceptions[i];
+    if (!prev && !curr) n00++;
+    else if (!prev && curr) n01++;
+    else if (prev && !curr) n10++;
+    else n11++;
+  }
+  
+  const n0 = n00 + n01;
+  const n1 = n10 + n11;
+  
+  let combinedPValue = 1;
+  
+  if (n0 > 0 && n1 > 0) {
+    const pi01 = n01 / n0;
+    const pi11 = n11 / n1;
+    const p = expectedRate;
+    
+    // Log-likelihood under null (correct coverage + independence)
+    const L0 = (n00 + n10) * Math.log(1 - p) + (n01 + n11) * Math.log(p);
+    
+    // Log-likelihood under alternative (first-order Markov)
+    let L1 = 0;
+    if (n00 > 0 && pi01 < 1) L1 += n00 * Math.log(1 - pi01);
+    if (n01 > 0 && pi01 > 0) L1 += n01 * Math.log(pi01);
+    if (n10 > 0 && pi11 < 1) L1 += n10 * Math.log(1 - pi11);
+    if (n11 > 0 && pi11 > 0) L1 += n11 * Math.log(pi11);
+    
+    const LR_cc = -2 * (L0 - L1);
+    combinedPValue = 1 - jStat.chisquare.cdf(Math.max(0, LR_cc), 2);
+  }
+  
+  // Generate interpretation
+  let interpretation: string;
+  if (combinedPValue >= 0.05 && kupiecPValue >= 0.05 && independencePValue >= 0.05) {
+    interpretation = 'Model passes: correct coverage and independent exceptions';
+  } else if (kupiecPValue < 0.05 && independencePValue >= 0.05) {
+    interpretation = 'Model fails: wrong exception rate, but exceptions are independent';
+  } else if (kupiecPValue >= 0.05 && independencePValue < 0.05) {
+    interpretation = 'Model fails: correct rate, but exceptions are clustered (volatility clustering not captured)';
+  } else {
+    interpretation = 'Model fails: both wrong rate and clustered exceptions';
+  }
+  
+  return {
+    pValue: combinedPValue,
+    kupiecPValue,
+    independencePValue,
+    interpretation,
+  };
+}
+
+/**
  * Scale VaR/ES for different time horizons using square root of time
  */
 export function scaleToHorizon(value: number, fromHorizon: number, toHorizon: number): number {

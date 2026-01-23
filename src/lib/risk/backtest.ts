@@ -1,5 +1,5 @@
 // Backtesting engine for VaR models
-import { kupiecTest, normalQuantile, mean, stdDev, ewmaVolatility } from './statistics';
+import { kupiecTest, normalQuantile, mean, stdDev, ewmaVolatility, christoffersenConditionalCoverageTest } from './statistics';
 import type { BacktestResult, BacktestSummary, ConfidenceLevel, ModelType } from './types';
 
 interface BacktestOptions {
@@ -121,21 +121,27 @@ export function generateBacktestSummary(
   const expectedRate = 1 - confidence / 100;
   const expectedExceptions = totalDays * expectedRate;
   
-  const kupiecPValue = kupiecTest(totalDays, exceptions, confidence);
+  // Get exception sequence for Christoffersen test
+  const exceptionSequence = results.map(r => r.exception);
+  const christoffersen = christoffersenConditionalCoverageTest(exceptionSequence, confidence);
   
-  // Determine status based on Kupiec test and exception rate
+  const kupiecPValue = christoffersen.kupiecPValue;
+  const independencePValue = christoffersen.independencePValue;
+  const conditionalCoveragePValue = christoffersen.pValue;
+  
+  // Determine status based on conditional coverage test (most comprehensive)
   let status: 'ok' | 'warning' | 'fail';
   let statusReason: string;
   
-  if (kupiecPValue < 0.01) {
+  if (conditionalCoveragePValue < 0.01) {
     status = 'fail';
-    statusReason = `Model rejected at 1% level. Exception rate ${(exceptionRate * 100).toFixed(2)}% vs expected ${(expectedRate * 100).toFixed(2)}%.`;
-  } else if (kupiecPValue < 0.05) {
+    statusReason = `Model rejected at 1% level. ${christoffersen.interpretation}`;
+  } else if (conditionalCoveragePValue < 0.05) {
     status = 'warning';
-    statusReason = `Model marginal at 5% level. Exception rate ${(exceptionRate * 100).toFixed(2)}% vs expected ${(expectedRate * 100).toFixed(2)}%.`;
+    statusReason = `Model marginal at 5% level. ${christoffersen.interpretation}`;
   } else {
     status = 'ok';
-    statusReason = `Model passes Kupiec test (p=${kupiecPValue.toFixed(3)}). Exception rate ${(exceptionRate * 100).toFixed(2)}% is consistent with ${confidence}% VaR.`;
+    statusReason = `Model passes conditional coverage test (p=${conditionalCoveragePValue.toFixed(3)}). ${christoffersen.interpretation}`;
   }
   
   return {
@@ -146,6 +152,9 @@ export function generateBacktestSummary(
     exceptionRate,
     expectedExceptions,
     kupiecPValue,
+    independencePValue,
+    conditionalCoveragePValue,
+    christoffersenInterpretation: christoffersen.interpretation,
     status,
     statusReason,
   };
