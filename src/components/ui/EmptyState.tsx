@@ -1,5 +1,5 @@
 // Empty state component
-import { Database, Upload, ArrowRight } from 'lucide-react';
+import { Database, Upload, ArrowRight, PencilLine } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useRisk } from '@/context/RiskContext';
 import { useNavigate } from 'react-router-dom';
@@ -12,7 +12,7 @@ interface EmptyStateProps {
 
 export function EmptyState({
   title = 'No Data Loaded',
-  description = 'Load a sample dataset or upload your own CSV to get started.',
+  description = 'Load a sample dataset, upload CSV, or enter data manually to get started.',
   showLoadSample = true,
 }: EmptyStateProps) {
   const { loadSampleDataset } = useRisk();
@@ -44,6 +44,15 @@ export function EmptyState({
           >
             <Upload className="h-4 w-4" />
             Upload CSV
+          </Button>
+          
+          <Button
+            variant="secondary"
+            onClick={() => navigate('/data')}
+            className="gap-2"
+          >
+            <PencilLine className="h-4 w-4" />
+            Enter Manually
           </Button>
         </div>
       )}

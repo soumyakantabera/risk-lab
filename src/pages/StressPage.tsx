@@ -26,6 +26,7 @@ import { historicalSimulation } from '@/lib/risk/models';
 import { mean, stdDev } from '@/lib/risk/statistics';
 import { HistoricalReplayPanel } from '@/components/stress/HistoricalReplayPanel';
 import { MonteCarloPathsChart } from '@/components/charts/MonteCarloPathsChart';
+import { CorrelationStressPanel } from '@/components/stress/CorrelationStressPanel';
 
 interface StressResult {
   name: string;
@@ -39,7 +40,7 @@ interface StressResult {
 }
 
 export default function StressPage() {
-  const { assets, returns, dates, portfolioValue } = useRisk();
+  const { assets, returns, dates, portfolioValue, assetReturns } = useRisk();
   
   const [shockPercent, setShockPercent] = useState(-5);
   const [volMultiplier, setVolMultiplier] = useState(1.5);
@@ -329,6 +330,14 @@ export default function StressPage() {
         </CardContent>
       </Card>
       
+      {/* Correlation Stress Testing */}
+      <CorrelationStressPanel
+        assetReturns={assetReturns}
+        assetNames={assets.map(a => a.name)}
+        weights={assets.map(a => a.weight)}
+        portfolioValue={portfolioValue}
+      />
+      
       {/* Interpretation */}
       <Card className="bg-muted/30 border-border/30">
         <CardHeader className="pb-2">
@@ -340,6 +349,7 @@ export default function StressPage() {
             <li>• <strong>Volatility stress</strong> scales all returns away from the mean, simulating sustained high-volatility regimes.</li>
             <li>• <strong>Historical replay</strong> uses actual data from crisis periods to stress test your current portfolio.</li>
             <li>• <strong>Monte Carlo paths</strong> show the range of possible portfolio outcomes under simulated market conditions.</li>
+            <li>• <strong>Correlation stress</strong> simulates crisis conditions where all assets move together, reducing diversification benefits.</li>
             <li>• <strong>Δ VaR/ES</strong> shows the increase in risk capital requirements under stressed conditions.</li>
           </ul>
         </CardContent>
