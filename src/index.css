@@ -2,95 +2,121 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* RiskLab Design System - Fintech Dark Theme */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-
-    --radius: 0.5rem;
-
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
+    /* Core backgrounds - Deep navy/slate */
+    --background: 222 47% 6%;
     --foreground: 210 40% 98%;
 
-    --card: 222.2 84% 4.9%;
+    /* Cards - Slightly elevated surfaces */
+    --card: 222 47% 9%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 222.2 84% 4.9%;
+    /* Popover/modals */
+    --popover: 222 47% 11%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    /* Primary - Electric teal */
+    --primary: 173 80% 45%;
+    --primary-foreground: 222 47% 6%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    /* Secondary - Muted slate */
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 90%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    /* Muted surfaces */
+    --muted: 217 33% 14%;
+    --muted-foreground: 215 20% 55%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    /* Accent - Bright cyan */
+    --accent: 190 95% 45%;
+    --accent-foreground: 222 47% 6%;
 
-    --destructive: 0 62.8% 30.6%;
+    /* Destructive - Loss red */
+    --destructive: 0 72% 55%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    /* Success - Gain green */
+    --success: 142 71% 45%;
+    --success-foreground: 222 47% 6%;
+
+    /* Warning - Amber */
+    --warning: 38 92% 50%;
+    --warning-foreground: 222 47% 6%;
+
+    /* Borders */
+    --border: 217 33% 20%;
+    --input: 217 33% 17%;
+    --ring: 173 80% 45%;
+
+    --radius: 0.625rem;
+
+    /* Chart colors */
+    --chart-1: 173 80% 45%;
+    --chart-2: 190 95% 45%;
+    --chart-3: 262 83% 58%;
+    --chart-4: 38 92% 50%;
+    --chart-5: 0 72% 55%;
+    --chart-6: 142 71% 45%;
+
+    /* Sidebar */
+    --sidebar-background: 222 47% 7%;
+    --sidebar-foreground: 210 40% 85%;
+    --sidebar-primary: 173 80% 45%;
+    --sidebar-primary-foreground: 222 47% 6%;
+    --sidebar-accent: 217 33% 14%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 217 33% 16%;
+    --sidebar-ring: 173 80% 45%;
+
+    /* Custom tokens for RiskLab */
+    --gradient-primary: linear-gradient(135deg, hsl(173 80% 45%), hsl(190 95% 45%));
+    --gradient-card: linear-gradient(180deg, hsl(222 47% 11%), hsl(222 47% 8%));
+    --gradient-danger: linear-gradient(135deg, hsl(0 72% 55%), hsl(350 75% 45%));
+    --gradient-success: linear-gradient(135deg, hsl(142 71% 45%), hsl(155 75% 40%));
+    
+    --glow-primary: 0 0 20px hsl(173 80% 45% / 0.3);
+    --glow-accent: 0 0 20px hsl(190 95% 45% / 0.3);
+    
+    --font-mono: 'JetBrains Mono', monospace;
+    --font-sans: 'Inter', system-ui, sans-serif;
+  }
+
+  .light {
+    --background: 0 0% 98%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 173 80% 40%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 40% 94%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 210 40% 94%;
+    --muted-foreground: 215 20% 40%;
+    --accent: 190 95% 40%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 72% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 142 71% 40%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 45%;
+    --warning-foreground: 222 47% 11%;
+    --border: 210 40% 88%;
+    --input: 210 40% 88%;
+    --ring: 173 80% 40%;
+    --sidebar-background: 210 40% 96%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 173 80% 40%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 210 40% 90%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 210 40% 88%;
   }
 }
 
@@ -100,6 +126,184 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-sans);
   }
+
+  /* Monospace for numbers/data */
+  .font-mono {
+    font-family: var(--font-mono);
+  }
+}
+
+@layer components {
+  /* Glassmorphism card effect */
+  .glass-card {
+    @apply bg-card/80 backdrop-blur-xl border border-border/50 shadow-xl;
+    background: linear-gradient(
+      145deg,
+      hsl(var(--card) / 0.9),
+      hsl(var(--card) / 0.6)
+    );
+  }
+
+  /* KPI card with glow */
+  .kpi-card {
+    @apply relative overflow-hidden rounded-lg border border-border/30 bg-card p-5;
+    background: linear-gradient(
+      145deg,
+      hsl(var(--card)),
+      hsl(222 47% 7%)
+    );
+  }
+
+  .kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--gradient-primary);
+    opacity: 0.6;
+  }
+
+  /* Status indicators */
+  .status-ok {
+    @apply bg-success/20 text-success border-success/30;
+  }
+
+  .status-warning {
+    @apply bg-warning/20 text-warning border-warning/30;
+  }
+
+  .status-danger {
+    @apply bg-destructive/20 text-destructive border-destructive/30;
+  }
+
+  /* Data table styling */
+  .data-table {
+    @apply font-mono text-sm;
+  }
+
+  .data-table th {
+    @apply text-muted-foreground font-medium text-xs uppercase tracking-wider;
+  }
+
+  .data-table td {
+    @apply tabular-nums;
+  }
+
+  /* Metric value styling */
+  .metric-value {
+    @apply font-mono text-2xl font-semibold tracking-tight;
+  }
+
+  .metric-label {
+    @apply text-xs text-muted-foreground uppercase tracking-wider;
+  }
+
+  /* Chart container */
+  .chart-container {
+    @apply rounded-lg border border-border/30 bg-card/50 p-4;
+  }
+
+  /* Animated gradient border */
+  .gradient-border {
+    position: relative;
+  }
+
+  .gradient-border::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: var(--gradient-primary);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+  }
+
+  /* Custom scrollbar */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: hsl(var(--muted));
+    border-radius: 3px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 3px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary));
+  }
+}
+
+@layer utilities {
+  /* Text gradient */
+  .text-gradient {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Glow effects */
+  .glow-primary {
+    box-shadow: var(--glow-primary);
+  }
+
+  .glow-accent {
+    box-shadow: var(--glow-accent);
+  }
+
+  /* Loss/Gain colors */
+  .text-loss {
+    @apply text-destructive;
+  }
+
+  .text-gain {
+    @apply text-success;
+  }
+
+  /* Fade animations */
+  .fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Pulse animation for loading */
+  .pulse-subtle {
+    animation: pulseSub 2s ease-in-out infinite;
+  }
+
+  @keyframes pulseSub {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+}
+
+/* Plotly chart overrides for dark theme */
+.js-plotly-plot .plotly .modebar {
+  background: transparent !important;
+}
+
+.js-plotly-plot .plotly .modebar-btn {
+  color: hsl(var(--muted-foreground)) !important;
+}
+
+.js-plotly-plot .plotly .modebar-btn:hover {
+  color: hsl(var(--primary)) !important;
 }
