@@ -1,14 +1,17 @@
 // Price Chart Preview Component using Plotly.js
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import Plot from 'react-plotly.js';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, TrendingDown } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { TrendingUp, TrendingDown, Percent, DollarSign } from 'lucide-react';
 import { FetchedAssetData } from '@/lib/api/marketData';
 
 interface PriceChartPreviewProps {
   assets: FetchedAssetData[];
 }
+
+type ChartMode = 'percent' | 'price';
 
 // Generate distinct colors for each asset
 const CHART_COLORS = [
@@ -25,8 +28,11 @@ const CHART_COLORS = [
 ];
 
 export function PriceChartPreview({ assets }: PriceChartPreviewProps) {
-  const { traces, stats } = useMemo(() => {
-    const traceData: Plotly.Data[] = [];
+  const [mode, setMode] = useState<ChartMode>('percent');
+  
+  const { percentTraces, priceTraces, stats } = useMemo(() => {
+    const percentData: Plotly.Data[] = [];
+    const priceData: Plotly.Data[] = [];
     const assetStats: Array<{
       symbol: string;
       color: string;
@@ -34,6 +40,7 @@ export function PriceChartPreview({ assets }: PriceChartPreviewProps) {
       endPrice: number;
       change: number;
       changePercent: number;
+      currency: string;
     }> = [];
     
     assets.forEach((asset, index) => {
@@ -41,11 +48,11 @@ export function PriceChartPreview({ assets }: PriceChartPreviewProps) {
       const dates = asset.data.map(d => d.date);
       const prices = asset.data.map(d => d.close);
       
-      // Normalize to percentage change from first price
       const firstPrice = prices[0] || 1;
       const normalizedPrices = prices.map(p => ((p - firstPrice) / firstPrice) * 100);
       
-      traceData.push({
+      // Percent change trace
+      percentData.push({
         x: dates,
         y: normalizedPrices,
         type: 'scatter',
@@ -56,6 +63,20 @@ export function PriceChartPreview({ assets }: PriceChartPreviewProps) {
           width: 2,
         },
         hovertemplate: `<b>${asset.symbol}</b><br>%{x|%b %d, %Y}<br>Change: %{y:.2f}%<extra></extra>`,
+      });
+      
+      // Actual price trace
+      priceData.push({
+        x: dates,
+        y: prices,
+        type: 'scatter',
+        mode: 'lines',
+        name: asset.symbol,
+        line: {
+          color,
+          width: 2,
+        },
+        hovertemplate: `<b>${asset.symbol}</b><br>%{x|%b %d, %Y}<br>Price: $%{y:.2f}<extra></extra>`,
       });
       
       const lastPrice = prices[prices.length - 1] || 0;
@@ -69,16 +90,19 @@ export function PriceChartPreview({ assets }: PriceChartPreviewProps) {
         endPrice: lastPrice,
         change,
         changePercent,
+        currency: asset.currency || 'USD',
       });
     });
     
-    return { traces: traceData, stats: assetStats };
+    return { percentTraces: percentData, priceTraces: priceData, stats: assetStats };
   }, [assets]);
+  
+  const traces = mode === 'percent' ? percentTraces : priceTraces;
   
   const layout: Partial<Plotly.Layout> = useMemo(() => ({
     autosize: true,
     height: 300,
-    margin: { l: 50, r: 20, t: 20, b: 40 },
+    margin: { l: 60, r: 20, t: 20, b: 40 },
     paper_bgcolor: 'transparent',
     plot_bgcolor: 'transparent',
     font: {
@@ -93,13 +117,17 @@ export function PriceChartPreview({ assets }: PriceChartPreviewProps) {
       tickfont: { size: 10 },
     },
     yaxis: {
-      title: { text: 'Change %', font: { size: 11 } },
+      title: { 
+        text: mode === 'percent' ? 'Change %' : 'Price ($)', 
+        font: { size: 11 } 
+      },
       showgrid: true,
       gridcolor: 'hsl(var(--border) / 0.3)',
-      zeroline: true,
+      zeroline: mode === 'percent',
       zerolinecolor: 'hsl(var(--muted-foreground))',
       zerolinewidth: 1,
-      ticksuffix: '%',
+      ticksuffix: mode === 'percent' ? '%' : '',
+      tickprefix: mode === 'price' ? '$' : '',
       tickfont: { size: 10 },
     },
     legend: {
@@ -110,7 +138,7 @@ export function PriceChartPreview({ assets }: PriceChartPreviewProps) {
       font: { size: 10 },
     },
     hovermode: 'x unified',
-  }), []);
+  }), [mode]);
   
   const config: Partial<Plotly.Config> = {
     displayModeBar: false,
@@ -124,10 +152,34 @@ export function PriceChartPreview({ assets }: PriceChartPreviewProps) {
   return (
     <Card className="border-primary/20 bg-primary/5">
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium flex items-center gap-2">
-          <TrendingUp className="h-4 w-4 text-primary" />
-          Price Preview (Normalized % Change)
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-primary" />
+            Price Preview
+          </CardTitle>
+          
+          {/* Mode Toggle */}
+          <div className="flex items-center gap-1 p-0.5 bg-muted rounded-lg">
+            <Button
+              variant={mode === 'percent' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setMode('percent')}
+              className="h-7 px-2 text-xs gap-1"
+            >
+              <Percent className="h-3 w-3" />
+              % Change
+            </Button>
+            <Button
+              variant={mode === 'price' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setMode('price')}
+              className="h-7 px-2 text-xs gap-1"
+            >
+              <DollarSign className="h-3 w-3" />
+              Price
+            </Button>
+          </div>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Chart */}
