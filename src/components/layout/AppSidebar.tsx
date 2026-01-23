@@ -9,12 +9,6 @@ import {
   Moon,
   Sun,
   TrendingDown,
-  Banknote,
-  Receipt,
-  Settings2,
-  PieChart,
-  Shield,
-  ClipboardCheck,
 } from 'lucide-react';
 import { NavLink as RouterNavLink, useLocation } from 'react-router-dom';
 import {
@@ -22,7 +16,6 @@ import {
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -33,7 +26,7 @@ import { Button } from '@/components/ui/button';
 import { useRisk } from '@/context/RiskContext';
 import { cn } from '@/lib/utils';
 
-const riskLabItems = [
+const navItems = [
   { title: 'Overview', url: '/', icon: LayoutDashboard },
   { title: 'Data & Portfolio', url: '/data', icon: Database },
   { title: 'Models', url: '/models', icon: Calculator },
@@ -42,21 +35,9 @@ const riskLabItems = [
   { title: 'Reports', url: '/reports', icon: FileText },
 ];
 
-const riskLabProItems = [
-  { title: 'Control Tower', url: '/fx', icon: LayoutDashboard },
-  { title: 'Exposure Ledger', url: '/fx/exposures', icon: Receipt },
-  { title: 'Model Studio', url: '/fx/models', icon: Settings2 },
-  { title: 'Tail Attribution', url: '/fx/attribution', icon: PieChart },
-  { title: 'Decision Lab', url: '/fx/decision', icon: Shield },
-  { title: 'Backtesting', url: '/fx/backtest', icon: ClipboardCheck },
-  { title: 'Report Builder', url: '/fx/reports', icon: FileText },
-];
-
 export function AppSidebar() {
   const location = useLocation();
   const { isDarkMode, toggleDarkMode } = useRisk();
-  
-  const isFXSection = location.pathname.startsWith('/fx');
   
   return (
     <Sidebar className="border-r border-sidebar-border">
@@ -73,14 +54,10 @@ export function AppSidebar() {
       </SidebarHeader>
       
       <SidebarContent className="px-2 py-4">
-        {/* RiskLab Classic */}
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs text-muted-foreground px-3 mb-2">
-            RiskLab Classic
-          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {riskLabItems.map((item) => {
+              {navItems.map((item) => {
                 const isActive = location.pathname === item.url;
                 return (
                   <SidebarMenuItem key={item.title}>
@@ -88,42 +65,9 @@ export function AppSidebar() {
                       <RouterNavLink
                         to={item.url}
                         className={cn(
-                          'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all',
+                          'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all',
                           'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
                           isActive && 'bg-sidebar-accent text-sidebar-primary'
-                        )}
-                      >
-                        <item.icon className={cn('h-4 w-4', isActive && 'text-primary')} />
-                        <span>{item.title}</span>
-                      </RouterNavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-        
-        {/* RiskLab Pro (FX) */}
-        <SidebarGroup className="mt-6">
-          <SidebarGroupLabel className="text-xs px-3 mb-2 flex items-center gap-2">
-            <Banknote className="h-3 w-3 text-primary" />
-            <span className="text-primary font-semibold">RiskLab Pro</span>
-            <span className="text-muted-foreground">FX Invoice</span>
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {riskLabProItems.map((item) => {
-                const isActive = location.pathname === item.url;
-                return (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
-                      <RouterNavLink
-                        to={item.url}
-                        className={cn(
-                          'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all',
-                          'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-                          isActive && 'bg-primary/10 text-primary border-l-2 border-primary'
                         )}
                       >
                         <item.icon className={cn('h-4 w-4', isActive && 'text-primary')} />
