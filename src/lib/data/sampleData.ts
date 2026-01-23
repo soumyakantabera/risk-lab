@@ -4,6 +4,7 @@ import { randomNormal } from '../risk/statistics';
 
 /**
  * Generate sample dataset: Normal returns baseline
+ * Now generates PRICES so log/simple returns can be calculated correctly
  */
 export function generateNormalReturns(days: number = 500): {
   assets: PortfolioAsset[];
@@ -12,21 +13,24 @@ export function generateNormalReturns(days: number = 500): {
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - days);
   
-  const returns: number[] = [];
-  const dataPoints: { date: Date; return: number }[] = [];
+  const dataPoints: { date: Date; price: number }[] = [];
   
-  // Generate normally distributed returns
+  // Generate price series using GBM-like process
   // Typical equity: ~10% annual return, ~20% annual volatility
   const dailyMu = 0.0004; // ~10% / 252
   const dailySigma = 0.0126; // ~20% / sqrt(252)
+  
+  let price = 100; // Starting price
   
   for (let i = 0; i < days; i++) {
     const date = new Date(startDate);
     date.setDate(startDate.getDate() + i);
     
-    const ret = randomNormal(dailyMu, dailySigma);
-    returns.push(ret);
-    dataPoints.push({ date, return: ret });
+    dataPoints.push({ date, price });
+    
+    // Generate next price using log-normal return
+    const logReturn = randomNormal(dailyMu, dailySigma);
+    price = price * Math.exp(logReturn);
   }
   
   return {
@@ -39,7 +43,7 @@ export function generateNormalReturns(days: number = 500): {
     info: {
       id: 'normal-baseline',
       name: 'Normal Returns Baseline',
-      description: 'Synthetic dataset with normally distributed returns (μ≈10% ann., σ≈20% ann.)',
+      description: 'Synthetic dataset with normally distributed log returns (μ≈10% ann., σ≈20% ann.)',
       type: 'normal',
       assetCount: 1,
       dateRange: {
@@ -53,6 +57,7 @@ export function generateNormalReturns(days: number = 500): {
 
 /**
  * Generate sample dataset: Heavy-tail (Student-t) returns
+ * Now generates PRICES so log/simple returns can be calculated correctly
  */
 export function generateHeavyTailReturns(days: number = 500): {
   assets: PortfolioAsset[];
@@ -61,30 +66,31 @@ export function generateHeavyTailReturns(days: number = 500): {
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - days);
   
-  const dataPoints: { date: Date; return: number }[] = [];
+  const dataPoints: { date: Date; price: number }[] = [];
   
-  // Generate t-distributed returns (heavier tails)
+  // Generate price series with fat-tailed returns
   const dailyMu = 0.0003;
   const dailySigma = 0.015;
-  const df = 4; // Low df = heavy tails
+  
+  let price = 100; // Starting price
   
   for (let i = 0; i < days; i++) {
     const date = new Date(startDate);
     date.setDate(startDate.getDate() + i);
     
-    // Generate t-distributed sample using transformation
-    // Use ratio of uniforms method approximation
-    let ret: number;
+    dataPoints.push({ date, price });
     
+    // Generate t-distributed sample using transformation
     // Simplified: generate using normal with occasional jumps
+    let logReturn: number;
     const isJump = Math.random() < 0.05; // 5% chance of jump
     if (isJump) {
-      ret = randomNormal(dailyMu, dailySigma * 3); // 3x volatility for jumps
+      logReturn = randomNormal(dailyMu, dailySigma * 3); // 3x volatility for jumps
     } else {
-      ret = randomNormal(dailyMu, dailySigma);
+      logReturn = randomNormal(dailyMu, dailySigma);
     }
     
-    dataPoints.push({ date, return: ret });
+    price = price * Math.exp(logReturn);
   }
   
   return {
@@ -111,6 +117,7 @@ export function generateHeavyTailReturns(days: number = 500): {
 
 /**
  * Generate sample dataset: Multi-asset with correlation and regime shifts
+ * Now generates PRICES so log/simple returns can be calculated correctly
  */
 export function generateMultiAssetReturns(days: number = 500): {
   assets: PortfolioAsset[];
@@ -121,9 +128,9 @@ export function generateMultiAssetReturns(days: number = 500): {
   
   // Define assets with different characteristics
   const assetParams = [
-    { id: 'equity', name: 'Equity Fund', mu: 0.0005, sigma: 0.015 },
-    { id: 'bonds', name: 'Bond Fund', mu: 0.0002, sigma: 0.005 },
-    { id: 'commodity', name: 'Commodity Fund', mu: 0.0003, sigma: 0.02 },
+    { id: 'equity', name: 'Equity Fund', mu: 0.0005, sigma: 0.015, startPrice: 100 },
+    { id: 'bonds', name: 'Bond Fund', mu: 0.0002, sigma: 0.005, startPrice: 50 },
+    { id: 'commodity', name: 'Commodity Fund', mu: 0.0003, sigma: 0.02, startPrice: 75 },
   ];
   
   // Correlation matrix (normal regime)
@@ -140,7 +147,7 @@ export function generateMultiAssetReturns(days: number = 500): {
     [0.7, 0.5, 1.0],
   ];
   
-  // Generate returns with regime switching
+  // Initialize assets with price series
   const assets: PortfolioAsset[] = assetParams.map(p => ({
     id: p.id,
     name: p.name,
@@ -148,12 +155,20 @@ export function generateMultiAssetReturns(days: number = 500): {
     data: [],
   }));
   
+  // Track current prices
+  const prices = assetParams.map(p => p.startPrice);
+  
   let currentRegime: 'normal' | 'stress' = 'normal';
   let regimeDuration = 0;
   
   for (let i = 0; i < days; i++) {
     const date = new Date(startDate);
     date.setDate(startDate.getDate() + i);
+    
+    // Record current prices
+    for (let j = 0; j < assetParams.length; j++) {
+      (assets[j].data as { date: Date; price: number }[]).push({ date, price: prices[j] });
+    }
     
     // Regime switching logic
     regimeDuration++;
@@ -176,9 +191,10 @@ export function generateMultiAssetReturns(days: number = 500): {
       L[2][0] * z[0] + L[2][1] * z[1] + L[2][2] * z[2],
     ];
     
+    // Update prices using log returns
     for (let j = 0; j < assetParams.length; j++) {
-      const ret = assetParams[j].mu + assetParams[j].sigma * volMultiplier * correlatedZ[j];
-      (assets[j].data as { date: Date; return: number }[]).push({ date, return: ret });
+      const logReturn = assetParams[j].mu + assetParams[j].sigma * volMultiplier * correlatedZ[j];
+      prices[j] = prices[j] * Math.exp(logReturn);
     }
   }
   

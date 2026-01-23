@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Table,
   TableBody,
@@ -62,7 +63,9 @@ export default function DataPage() {
     dates,
     correlationMatrix,
     portfolioValue,
+    returnType,
     setPortfolioValue,
+    setReturnType,
     loadSampleDataset,
     loadCustomData,
     updateWeights,
@@ -225,7 +228,7 @@ export default function DataPage() {
       {/* Portfolio Configuration */}
       {assets.length > 0 && (
         <>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Portfolio Value */}
             <Card className="glass-card">
               <CardHeader>
@@ -247,6 +250,31 @@ export default function DataPage() {
                   <p className="text-xs text-muted-foreground">
                     Enter your portfolio notional value for VaR/ES calculations in dollar terms
                   </p>
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Return Type Toggle */}
+            <Card className="glass-card">
+              <CardHeader>
+                <CardTitle className="text-base font-semibold">Return Calculation</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <Tabs value={returnType} onValueChange={(v) => setReturnType(v as 'log' | 'simple')}>
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="log">Log Returns</TabsTrigger>
+                      <TabsTrigger value="simple">Simple Returns</TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                  <p className="text-xs text-muted-foreground">
+                    {returnType === 'log' 
+                      ? 'Log returns: r = ln(P_t / P_{t-1}). Additive over time, commonly used in finance.'
+                      : 'Simple returns: r = (P_t - P_{t-1}) / P_{t-1}. Intuitive percentage change.'}
+                  </p>
+                  <Badge variant="outline" className="font-mono text-xs">
+                    Current: {returnType === 'log' ? 'Logarithmic' : 'Arithmetic'}
+                  </Badge>
                 </div>
               </CardContent>
             </Card>
