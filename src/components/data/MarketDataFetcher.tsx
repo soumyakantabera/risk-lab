@@ -1,5 +1,5 @@
-// Market Data Fetcher - Uses real APIs (Yahoo Finance, CoinGecko)
-import { useState, useCallback } from 'react';
+// Market Data Fetcher - Uses real APIs with caching, retry logic, and fallbacks
+import { useState, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,14 +24,20 @@ import {
   Globe,
   Loader2,
   Wifi,
-  WifiOff
+  WifiOff,
+  RefreshCw,
+  Database,
+  Trash2
 } from 'lucide-react';
 import { useRisk } from '@/context/RiskContext';
 import { 
   fetchMultipleAssets, 
   FetchedAssetData,
   calculateReturnsFromPrices,
-  CRYPTO_MAP 
+  CRYPTO_MAP,
+  getCacheStats,
+  clearAllCache,
+  clearOldCache
 } from '@/lib/api/marketData';
 
 interface TickerEntry {
@@ -67,6 +73,7 @@ interface FetchResult {
   success: boolean;
   message: string;
   data?: FetchedAssetData;
+  fromCache?: boolean;
 }
 
 export function MarketDataFetcher() {
@@ -80,18 +87,30 @@ export function MarketDataFetcher() {
   const [results, setResults] = useState<FetchResult[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [forceRefresh, setForceRefresh] = useState(false);
+  const [cacheStats, setCacheStats] = useState({ count: 0, totalSize: 0, symbols: [] as string[] });
   
-  // Monitor online status
-  useState(() => {
+  // Update cache stats
+  const updateCacheStats = useCallback(() => {
+    setCacheStats(getCacheStats());
+  }, []);
+  
+  // Monitor online status and cache
+  useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
+    
+    // Clean old cache on mount
+    clearOldCache();
+    updateCacheStats();
+    
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  });
+  }, [updateCacheStats]);
   
   const addTicker = useCallback((symbol: string) => {
     const upper = symbol.toUpperCase().trim();
@@ -105,6 +124,11 @@ export function MarketDataFetcher() {
     setSelectedTickers(prev => prev.filter(t => t !== symbol));
   }, []);
   
+  const handleClearCache = useCallback(() => {
+    clearAllCache();
+    updateCacheStats();
+  }, [updateCacheStats]);
+  
   const getTickerBadgeVariant = (symbol: string): 'default' | 'secondary' | 'outline' => {
     if (CRYPTO_MAP[symbol]) return 'default';
     const ticker = POPULAR_TICKERS.find(t => t.symbol === symbol);
@@ -113,8 +137,8 @@ export function MarketDataFetcher() {
   };
   
   const fetchMarketData = useCallback(async () => {
-    if (!isOnline) {
-      setError('You appear to be offline. Please check your internet connection.');
+    if (!isOnline && !cacheStats.count) {
+      setError('You appear to be offline and have no cached data.');
       return;
     }
     
@@ -133,7 +157,8 @@ export function MarketDataFetcher() {
         selectedTickers,
         startDate,
         endDate,
-        (completed, total) => setProgress((completed / total) * 100)
+        (completed, total) => setProgress((completed / total) * 100),
+        { useCache: true, forceRefresh }
       );
       
       const resultArray: FetchResult[] = [];
@@ -151,11 +176,13 @@ export function MarketDataFetcher() {
             success: true,
             message: `${result.data.length} days of data`,
             data: result,
+            fromCache: result.source === 'cache',
           });
         }
       });
       
       setResults(resultArray);
+      updateCacheStats();
       
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch market data');
@@ -163,7 +190,7 @@ export function MarketDataFetcher() {
       setLoading(false);
       setProgress(100);
     }
-  }, [selectedTickers, dateRange, isOnline]);
+  }, [selectedTickers, dateRange, isOnline, forceRefresh, cacheStats.count, updateCacheStats]);
   
   const importToRiskLab = useCallback(() => {
     const successfulResults = results.filter(r => r.success && r.data);
@@ -211,6 +238,12 @@ export function MarketDataFetcher() {
     loadCustomData(assets, datasetInfo);
   }, [results, selectedTickers, dateRange, loadCustomData]);
   
+  const formatBytes = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+  
   return (
     <Card className="glass-card">
       <CardHeader>
@@ -230,10 +263,37 @@ export function MarketDataFetcher() {
           )}
         </CardTitle>
         <CardDescription>
-          Fetch real historical data from Yahoo Finance & CoinGecko
+          Fetch real historical data with caching and automatic fallbacks
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Cache Status */}
+        {cacheStats.count > 0 && (
+          <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+            <div className="flex items-center gap-2">
+              <Database className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm">
+                <strong>{cacheStats.count}</strong> cached items ({formatBytes(cacheStats.totalSize)})
+              </span>
+              {cacheStats.symbols.length > 0 && (
+                <span className="text-xs text-muted-foreground">
+                  • {cacheStats.symbols.slice(0, 5).join(', ')}
+                  {cacheStats.symbols.length > 5 && ` +${cacheStats.symbols.length - 5} more`}
+                </span>
+              )}
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleClearCache}
+              className="text-xs h-7"
+            >
+              <Trash2 className="h-3 w-3 mr-1" />
+              Clear
+            </Button>
+          </div>
+        )}
+        
         {/* Ticker Selection */}
         <div className="space-y-3">
           <Label className="text-sm font-medium">Select Assets (max 10)</Label>
@@ -307,30 +367,45 @@ export function MarketDataFetcher() {
           </div>
         </div>
         
-        {/* Date Range */}
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">Date Range</Label>
-          <Select value={dateRange} onValueChange={setDateRange}>
-            <SelectTrigger className="w-48">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {DATE_RANGES.map(range => (
-                <SelectItem key={range.value} value={range.value}>
-                  {range.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <p className="text-xs text-muted-foreground">
-            Crypto data limited to 1 year due to API constraints
-          </p>
+        {/* Date Range & Options */}
+        <div className="flex flex-wrap gap-4 items-end">
+          <div className="space-y-2 flex-1 min-w-[140px]">
+            <Label className="text-sm font-medium">Date Range</Label>
+            <Select value={dateRange} onValueChange={setDateRange}>
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {DATE_RANGES.map(range => (
+                  <SelectItem key={range.value} value={range.value}>
+                    {range.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="flex items-center gap-2 pb-0.5">
+            <Button
+              variant={forceRefresh ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setForceRefresh(!forceRefresh)}
+              className="text-xs h-9"
+            >
+              <RefreshCw className={`h-3 w-3 mr-1 ${forceRefresh ? 'animate-spin' : ''}`} />
+              {forceRefresh ? 'Force Refresh ON' : 'Use Cache'}
+            </Button>
+          </div>
         </div>
+        
+        <p className="text-xs text-muted-foreground">
+          Crypto data limited to 1 year. Data cached for 4 hours.
+        </p>
         
         {/* Fetch Button */}
         <Button 
           onClick={fetchMarketData}
-          disabled={loading || selectedTickers.length === 0 || !isOnline}
+          disabled={loading || selectedTickers.length === 0}
           className="w-full"
         >
           {loading ? (
@@ -341,7 +416,7 @@ export function MarketDataFetcher() {
           ) : (
             <>
               <Download className="h-4 w-4 mr-2" />
-              Fetch Live Market Data
+              Fetch Market Data
             </>
           )}
         </Button>
@@ -380,8 +455,20 @@ export function MarketDataFetcher() {
                         ({result.data.name})
                       </span>
                     )}
+                    {result.fromCache && (
+                      <Badge variant="secondary" className="text-[10px] px-1 py-0">
+                        cached
+                      </Badge>
+                    )}
                   </div>
-                  <span className="text-xs text-muted-foreground">{result.message}</span>
+                  <div className="flex items-center gap-2">
+                    {result.data && (
+                      <Badge variant="outline" className="text-[10px]">
+                        {result.data.source}
+                      </Badge>
+                    )}
+                    <span className="text-xs text-muted-foreground">{result.message}</span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -409,12 +496,13 @@ export function MarketDataFetcher() {
         {/* Info Note */}
         <Alert>
           <Globe className="h-4 w-4" />
-          <AlertTitle>Live Data Sources</AlertTitle>
+          <AlertTitle>Data Sources & Reliability</AlertTitle>
           <AlertDescription className="text-xs space-y-1">
-            <p><strong>Stocks & ETFs:</strong> Yahoo Finance (via CORS proxy)</p>
-            <p><strong>Crypto:</strong> CoinGecko API (supports BTC, ETH, SOL, etc.)</p>
+            <p><strong>Primary:</strong> Yahoo Finance (4 CORS proxy fallbacks)</p>
+            <p><strong>Fallback:</strong> Alpha Vantage (25 free calls/day)</p>
+            <p><strong>Crypto:</strong> CoinGecko API with retry logic</p>
             <p className="text-muted-foreground mt-2">
-              Data is fetched in real-time. No API keys required.
+              Data is cached locally for 4 hours to reduce API calls and improve reliability.
             </p>
           </AlertDescription>
         </Alert>

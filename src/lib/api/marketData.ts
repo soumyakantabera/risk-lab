@@ -1,4 +1,5 @@
 // Real Market Data APIs for client-side use (GitHub Pages compatible)
+// Enhanced with caching, retry logic, multiple fallback proxies, and Alpha Vantage support
 
 export interface MarketDataPoint {
   date: Date;
@@ -14,27 +15,199 @@ export interface FetchedAssetData {
   name: string;
   data: MarketDataPoint[];
   currency: string;
+  source: 'yahoo' | 'alphavantage' | 'coingecko' | 'cache';
+  cachedAt?: number;
 }
 
-// Yahoo Finance via free CORS proxy services
+// ============= CACHE LAYER =============
+const CACHE_PREFIX = 'risklab_market_';
+const CACHE_DURATION = 4 * 60 * 60 * 1000; // 4 hours in milliseconds
+
+interface CachedData {
+  data: FetchedAssetData;
+  timestamp: number;
+  expiresAt: number;
+}
+
+function getCacheKey(symbol: string, startDate: Date, endDate: Date): string {
+  const start = startDate.toISOString().split('T')[0];
+  const end = endDate.toISOString().split('T')[0];
+  return `${CACHE_PREFIX}${symbol.toUpperCase()}_${start}_${end}`;
+}
+
+function getFromCache(symbol: string, startDate: Date, endDate: Date): FetchedAssetData | null {
+  try {
+    const key = getCacheKey(symbol, startDate, endDate);
+    const cached = localStorage.getItem(key);
+    
+    if (!cached) return null;
+    
+    const parsed: CachedData = JSON.parse(cached);
+    
+    // Check if cache is expired
+    if (Date.now() > parsed.expiresAt) {
+      localStorage.removeItem(key);
+      return null;
+    }
+    
+    // Restore Date objects
+    const data: FetchedAssetData = {
+      ...parsed.data,
+      data: parsed.data.data.map(d => ({
+        ...d,
+        date: new Date(d.date),
+      })),
+      source: 'cache',
+      cachedAt: parsed.timestamp,
+    };
+    
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+function saveToCache(data: FetchedAssetData, startDate: Date, endDate: Date): void {
+  try {
+    const key = getCacheKey(data.symbol, startDate, endDate);
+    const cached: CachedData = {
+      data,
+      timestamp: Date.now(),
+      expiresAt: Date.now() + CACHE_DURATION,
+    };
+    localStorage.setItem(key, JSON.stringify(cached));
+  } catch {
+    // localStorage might be full, clear old cache entries
+    clearOldCache();
+  }
+}
+
+export function clearOldCache(): void {
+  try {
+    const keys = Object.keys(localStorage).filter(k => k.startsWith(CACHE_PREFIX));
+    keys.forEach(key => {
+      try {
+        const cached = localStorage.getItem(key);
+        if (cached) {
+          const parsed: CachedData = JSON.parse(cached);
+          if (Date.now() > parsed.expiresAt) {
+            localStorage.removeItem(key);
+          }
+        }
+      } catch {
+        localStorage.removeItem(key);
+      }
+    });
+  } catch {
+    // Ignore errors
+  }
+}
+
+export function clearAllCache(): void {
+  try {
+    const keys = Object.keys(localStorage).filter(k => k.startsWith(CACHE_PREFIX));
+    keys.forEach(key => localStorage.removeItem(key));
+  } catch {
+    // Ignore errors
+  }
+}
+
+// ============= CORS PROXIES =============
+// Multiple fallback proxies for reliability
 const CORS_PROXIES = [
-  'https://api.allorigins.win/raw?url=',
-  'https://corsproxy.io/?',
+  { url: 'https://api.allorigins.win/raw?url=', name: 'AllOrigins' },
+  { url: 'https://corsproxy.io/?', name: 'CorsProxy.io' },
+  { url: 'https://api.codetabs.com/v1/proxy?quest=', name: 'CodeTabs' },
+  { url: 'https://thingproxy.freeboard.io/fetch/', name: 'ThingProxy' },
 ];
+
+// ============= RETRY LOGIC =============
+interface RetryConfig {
+  maxRetries: number;
+  baseDelay: number;
+  maxDelay: number;
+}
+
+const DEFAULT_RETRY_CONFIG: RetryConfig = {
+  maxRetries: 3,
+  baseDelay: 1000,
+  maxDelay: 10000,
+};
+
+async function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function calculateBackoff(attempt: number, config: RetryConfig): number {
+  // Exponential backoff with jitter
+  const exponentialDelay = config.baseDelay * Math.pow(2, attempt);
+  const jitter = Math.random() * 1000;
+  return Math.min(exponentialDelay + jitter, config.maxDelay);
+}
+
+async function fetchWithRetry(
+  url: string,
+  options: RequestInit = {},
+  config: RetryConfig = DEFAULT_RETRY_CONFIG
+): Promise<Response> {
+  let lastError: Error | null = null;
+  
+  for (let attempt = 0; attempt <= config.maxRetries; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+      
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (response.ok) {
+        return response;
+      }
+      
+      // Don't retry on client errors (4xx) except rate limits
+      if (response.status >= 400 && response.status < 500 && response.status !== 429) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      lastError = new Error(`HTTP ${response.status}`);
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error('Unknown error');
+      
+      // Don't retry on abort
+      if (lastError.name === 'AbortError') {
+        throw new Error('Request timeout');
+      }
+    }
+    
+    // Wait before retrying (except on last attempt)
+    if (attempt < config.maxRetries) {
+      await sleep(calculateBackoff(attempt, config));
+    }
+  }
+  
+  throw lastError || new Error('All retries failed');
+}
 
 async function fetchWithProxy(url: string): Promise<Response> {
   let lastError: Error | null = null;
   
   for (const proxy of CORS_PROXIES) {
     try {
-      const response = await fetch(proxy + encodeURIComponent(url), {
-        headers: { 'Accept': 'application/json' },
-      });
+      console.log(`[MarketData] Trying ${proxy.name} proxy...`);
+      const response = await fetchWithRetry(
+        proxy.url + encodeURIComponent(url),
+        { headers: { 'Accept': 'application/json' } },
+        { maxRetries: 1, baseDelay: 500, maxDelay: 2000 }
+      );
       
-      if (response.ok) {
-        return response;
-      }
+      console.log(`[MarketData] ${proxy.name} succeeded`);
+      return response;
     } catch (err) {
+      console.warn(`[MarketData] ${proxy.name} failed:`, err);
       lastError = err instanceof Error ? err : new Error('Unknown error');
     }
   }
@@ -42,7 +215,7 @@ async function fetchWithProxy(url: string): Promise<Response> {
   throw lastError || new Error('All proxies failed');
 }
 
-// Fetch from Yahoo Finance v8 chart API
+// ============= YAHOO FINANCE =============
 export async function fetchYahooFinance(
   symbol: string,
   startDate: Date,
@@ -94,62 +267,83 @@ export async function fetchYahooFinance(
     name: result.meta?.longName || result.meta?.shortName || symbol,
     data,
     currency: result.meta?.currency || 'USD',
+    source: 'yahoo',
   };
 }
 
-// Alternative: Fetch from Polygon.io free tier (requires API key but has generous free tier)
-// This is commented out but available if you add POLYGON_API_KEY
-/*
-export async function fetchPolygon(
+// ============= ALPHA VANTAGE (FREE TIER) =============
+// Free tier: 25 requests/day - use as fallback
+const ALPHA_VANTAGE_API_KEY = 'demo'; // Use 'demo' for limited testing or get free key at alphavantage.co
+
+export async function fetchAlphaVantage(
   symbol: string,
-  startDate: Date,
-  endDate: Date,
-  apiKey: string
+  apiKey: string = ALPHA_VANTAGE_API_KEY
 ): Promise<FetchedAssetData> {
-  const start = startDate.toISOString().split('T')[0];
-  const end = endDate.toISOString().split('T')[0];
+  const url = `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED&symbol=${symbol}&outputsize=full&apikey=${apiKey}`;
   
-  const url = `https://api.polygon.io/v2/aggs/ticker/${symbol}/range/1/day/${start}/${end}?adjusted=true&sort=asc&apiKey=${apiKey}`;
+  const response = await fetchWithRetry(url, {
+    headers: { 'Accept': 'application/json' },
+  });
   
-  const response = await fetch(url);
   const json = await response.json();
   
-  if (json.status !== 'OK' || !json.results) {
-    throw new Error(json.message || 'Polygon API error');
+  // Check for API errors
+  if (json['Error Message']) {
+    throw new Error(json['Error Message']);
   }
   
-  const data: MarketDataPoint[] = json.results.map((r: any) => ({
-    date: new Date(r.t),
-    open: r.o,
-    high: r.h,
-    low: r.l,
-    close: r.c,
-    volume: r.v,
-  }));
+  if (json['Note']) {
+    throw new Error('Alpha Vantage rate limit exceeded');
+  }
+  
+  const timeSeries = json['Time Series (Daily)'];
+  if (!timeSeries) {
+    throw new Error(`No data found for ${symbol}`);
+  }
+  
+  const data: MarketDataPoint[] = Object.entries(timeSeries)
+    .map(([dateStr, values]: [string, any]) => ({
+      date: new Date(dateStr),
+      open: parseFloat(values['1. open']),
+      high: parseFloat(values['2. high']),
+      low: parseFloat(values['3. low']),
+      close: parseFloat(values['5. adjusted close'] || values['4. close']),
+      volume: parseInt(values['6. volume'] || values['5. volume'] || '0'),
+    }))
+    .filter(d => !isNaN(d.close) && d.close > 0)
+    .sort((a, b) => a.date.getTime() - b.date.getTime());
+  
+  if (data.length === 0) {
+    throw new Error(`No valid price data for ${symbol}`);
+  }
+  
+  const meta = json['Meta Data'] || {};
   
   return {
     symbol: symbol.toUpperCase(),
-    name: symbol,
+    name: meta['2. Symbol'] || symbol,
     data,
     currency: 'USD',
+    source: 'alphavantage',
   };
 }
-*/
 
-// Cryptocurrency data from CoinGecko (no API key needed)
+// ============= COINGECKO (CRYPTO) =============
 export async function fetchCryptoData(
   coinId: string,
   days: number = 365
 ): Promise<FetchedAssetData> {
   const url = `https://api.coingecko.com/api/v3/coins/${coinId}/market_chart?vs_currency=usd&days=${days}&interval=daily`;
   
-  const response = await fetch(url);
-  
-  if (!response.ok) {
-    throw new Error(`CoinGecko API error: ${response.status}`);
-  }
+  const response = await fetchWithRetry(url, {
+    headers: { 'Accept': 'application/json' },
+  });
   
   const json = await response.json();
+  
+  if (json.error) {
+    throw new Error(json.error);
+  }
   
   if (!json.prices || json.prices.length === 0) {
     throw new Error(`No data found for ${coinId}`);
@@ -169,6 +363,7 @@ export async function fetchCryptoData(
     name: coinId.charAt(0).toUpperCase() + coinId.slice(1),
     data,
     currency: 'USD',
+    source: 'coingecko',
   };
 }
 
@@ -184,34 +379,98 @@ export const CRYPTO_MAP: Record<string, string> = {
   'DOT': 'polkadot',
   'MATIC': 'matic-network',
   'AVAX': 'avalanche-2',
+  'LINK': 'chainlink',
+  'UNI': 'uniswap',
+  'ATOM': 'cosmos',
+  'LTC': 'litecoin',
 };
 
-// Smart fetcher that tries Yahoo first, then CoinGecko for crypto
+// ============= SMART FETCHER WITH FALLBACKS =============
+export interface FetchOptions {
+  useCache?: boolean;
+  alphaVantageKey?: string;
+  forceRefresh?: boolean;
+}
+
 export async function fetchMarketData(
   symbol: string,
   startDate: Date,
-  endDate: Date
+  endDate: Date,
+  options: FetchOptions = {}
 ): Promise<FetchedAssetData> {
+  const { useCache = true, alphaVantageKey, forceRefresh = false } = options;
   const upperSymbol = symbol.toUpperCase();
+  
+  // Check cache first (unless force refresh)
+  if (useCache && !forceRefresh) {
+    const cached = getFromCache(upperSymbol, startDate, endDate);
+    if (cached) {
+      console.log(`[MarketData] Cache hit for ${upperSymbol}`);
+      return cached;
+    }
+  }
+  
+  let data: FetchedAssetData;
+  let errors: string[] = [];
   
   // Check if it's a known cryptocurrency
   const cryptoId = CRYPTO_MAP[upperSymbol];
   
   if (cryptoId) {
+    // Crypto: use CoinGecko
     const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-    return fetchCryptoData(cryptoId, Math.min(days, 365)); // CoinGecko free tier limited to 365 days
+    data = await fetchCryptoData(cryptoId, Math.min(days, 365));
+  } else {
+    // Stocks/ETFs: try Yahoo first, then Alpha Vantage as fallback
+    try {
+      console.log(`[MarketData] Fetching ${upperSymbol} from Yahoo Finance...`);
+      data = await fetchYahooFinance(symbol, startDate, endDate);
+    } catch (yahooError) {
+      const yahooMessage = yahooError instanceof Error ? yahooError.message : 'Unknown error';
+      errors.push(`Yahoo: ${yahooMessage}`);
+      console.warn(`[MarketData] Yahoo Finance failed for ${upperSymbol}:`, yahooError);
+      
+      // Try Alpha Vantage as fallback
+      try {
+        console.log(`[MarketData] Trying Alpha Vantage for ${upperSymbol}...`);
+        const fullData = await fetchAlphaVantage(symbol, alphaVantageKey);
+        
+        // Filter to requested date range
+        data = {
+          ...fullData,
+          data: fullData.data.filter(
+            d => d.date >= startDate && d.date <= endDate
+          ),
+        };
+        
+        if (data.data.length === 0) {
+          throw new Error('No data in requested date range');
+        }
+      } catch (avError) {
+        const avMessage = avError instanceof Error ? avError.message : 'Unknown error';
+        errors.push(`Alpha Vantage: ${avMessage}`);
+        console.warn(`[MarketData] Alpha Vantage failed for ${upperSymbol}:`, avError);
+        
+        throw new Error(`Failed to fetch ${upperSymbol}. Tried: ${errors.join('; ')}`);
+      }
+    }
   }
   
-  // Try Yahoo Finance for stocks/ETFs
-  return fetchYahooFinance(symbol, startDate, endDate);
+  // Save to cache
+  if (useCache) {
+    saveToCache(data, startDate, endDate);
+  }
+  
+  return data;
 }
 
-// Batch fetch multiple symbols
+// ============= BATCH FETCH =============
 export async function fetchMultipleAssets(
   symbols: string[],
   startDate: Date,
   endDate: Date,
-  onProgress?: (completed: number, total: number) => void
+  onProgress?: (completed: number, total: number) => void,
+  options: FetchOptions = {}
 ): Promise<Map<string, FetchedAssetData | Error>> {
   const results = new Map<string, FetchedAssetData | Error>();
   
@@ -220,7 +479,7 @@ export async function fetchMultipleAssets(
     const symbol = symbols[i];
     
     try {
-      const data = await fetchMarketData(symbol, startDate, endDate);
+      const data = await fetchMarketData(symbol, startDate, endDate, options);
       results.set(symbol, data);
     } catch (err) {
       results.set(symbol, err instanceof Error ? err : new Error('Unknown error'));
@@ -228,16 +487,18 @@ export async function fetchMultipleAssets(
     
     onProgress?.(i + 1, symbols.length);
     
-    // Small delay between requests to be nice to APIs
+    // Delay between requests (shorter if using cache)
     if (i < symbols.length - 1) {
-      await new Promise(resolve => setTimeout(resolve, 300));
+      const wasCached = results.get(symbol) instanceof Error === false && 
+                       (results.get(symbol) as FetchedAssetData)?.source === 'cache';
+      await sleep(wasCached ? 100 : 500);
     }
   }
   
   return results;
 }
 
-// Calculate returns from price data
+// ============= UTILITIES =============
 export function calculateReturnsFromPrices(
   prices: number[],
   type: 'log' | 'simple' = 'log'
@@ -255,4 +516,28 @@ export function calculateReturnsFromPrices(
   }
   
   return returns;
+}
+
+// Get cache statistics
+export function getCacheStats(): { count: number; totalSize: number; symbols: string[] } {
+  try {
+    const keys = Object.keys(localStorage).filter(k => k.startsWith(CACHE_PREFIX));
+    let totalSize = 0;
+    const symbols: string[] = [];
+    
+    keys.forEach(key => {
+      const item = localStorage.getItem(key);
+      if (item) {
+        totalSize += item.length;
+        const symbolMatch = key.replace(CACHE_PREFIX, '').split('_')[0];
+        if (symbolMatch && !symbols.includes(symbolMatch)) {
+          symbols.push(symbolMatch);
+        }
+      }
+    });
+    
+    return { count: keys.length, totalSize, symbols };
+  } catch {
+    return { count: 0, totalSize: 0, symbols: [] };
+  }
 }
