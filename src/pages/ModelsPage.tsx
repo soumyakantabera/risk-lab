@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/table';
 import { HelpCircle, Clock, Zap } from 'lucide-react';
 import { ReturnsHistogram } from '@/components/charts/ReturnsHistogram';
+import { PortfolioOptimizer } from '@/components/optimizer/PortfolioOptimizer';
 import type { ConfidenceLevel, TimeHorizon, ModelType } from '@/lib/risk/types';
 
 const modelDescriptions: Record<ModelType, { name: string; description: string }> = {
@@ -51,10 +52,12 @@ export default function ModelsPage() {
   const { 
     assets, 
     returns,
+    assetReturns,
     modelResults,
     ewmaLambda,
     setEwmaLambda,
     portfolioValue,
+    updateWeights,
   } = useRisk();
   
   const [selectedConfidence, setSelectedConfidence] = useState<ConfidenceLevel>(95);
@@ -320,6 +323,21 @@ export default function ModelsPage() {
           </CardContent>
         </Card>
       </div>
+      
+      {/* Portfolio Optimizer */}
+      <PortfolioOptimizer
+        assetReturns={assetReturns}
+        assetNames={assets.map(a => a.name)}
+        currentWeights={assets.map(a => a.weight)}
+        portfolioValue={portfolioValue}
+        onApplyWeights={(weights) => {
+          const weightUpdates = assets.map((a, i) => ({
+            id: a.id,
+            weight: weights[i],
+          }));
+          updateWeights(weightUpdates);
+        }}
+      />
     </div>
   );
 }

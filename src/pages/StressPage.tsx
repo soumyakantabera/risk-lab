@@ -27,6 +27,7 @@ import { mean, stdDev } from '@/lib/risk/statistics';
 import { HistoricalReplayPanel } from '@/components/stress/HistoricalReplayPanel';
 import { MonteCarloPathsChart } from '@/components/charts/MonteCarloPathsChart';
 import { CorrelationStressPanel } from '@/components/stress/CorrelationStressPanel';
+import { CombinedStressPanel } from '@/components/stress/CombinedStressPanel';
 
 interface StressResult {
   name: string;
@@ -338,6 +339,14 @@ export default function StressPage() {
         portfolioValue={portfolioValue}
       />
       
+      {/* Combined Stress Scenarios */}
+      <CombinedStressPanel
+        assetReturns={assetReturns}
+        assetNames={assets.map(a => a.name)}
+        weights={assets.map(a => a.weight)}
+        portfolioValue={portfolioValue}
+      />
+      
       {/* Interpretation */}
       <Card className="bg-muted/30 border-border/30">
         <CardHeader className="pb-2">
@@ -350,6 +359,7 @@ export default function StressPage() {
             <li>• <strong>Historical replay</strong> uses actual data from crisis periods to stress test your current portfolio.</li>
             <li>• <strong>Monte Carlo paths</strong> show the range of possible portfolio outcomes under simulated market conditions.</li>
             <li>• <strong>Correlation stress</strong> simulates crisis conditions where all assets move together, reducing diversification benefits.</li>
+            <li>• <strong>Combined stress</strong> shows the compounding effect of multiple simultaneous shocks.</li>
             <li>• <strong>Δ VaR/ES</strong> shows the increase in risk capital requirements under stressed conditions.</li>
           </ul>
         </CardContent>
