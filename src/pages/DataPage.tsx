@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { ReturnsTimeSeries } from '@/components/charts/RollingVaRChart';
 import { CorrelationHeatmap } from '@/components/charts/CorrelationHeatmap';
+import { ManualDataEntry } from '@/components/data/ManualDataEntry';
 
 const sampleDatasets = [
   {
@@ -224,6 +225,9 @@ export default function DataPage() {
           </div>
         </CardContent>
       </Card>
+      
+      {/* Manual Data Entry - Educational */}
+      <ManualDataEntry onDataLoad={loadCustomData} />
       
       {/* Portfolio Configuration */}
       {assets.length > 0 && (
