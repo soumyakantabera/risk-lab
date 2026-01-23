@@ -1,0 +1,22 @@
+{
+  "company": "BankCo",
+  "sector": "Banks / Financials",
+  "currency": "USD",
+  "incomeStatement": [
+    { "year": 2021, "netInterestIncome": 420, "nonInterestIncome": 180, "netIncome": 145 },
+    { "year": 2022, "netInterestIncome": 450, "nonInterestIncome": 190, "netIncome": 158 },
+    { "year": 2023, "netInterestIncome": 470, "nonInterestIncome": 205, "netIncome": 166 }
+  ],
+  "ratios": {
+    "cet1": 0.122,
+    "leverageRatio": 0.071,
+    "nim": 0.032,
+    "costToIncome": 0.49,
+    "nplRatio": 0.021,
+    "coverageRatio": 0.54
+  },
+  "loanLossProvision": {
+    "base": 0.008,
+    "stressed": 0.014
+  }
+}

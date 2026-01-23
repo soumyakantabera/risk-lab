@@ -1,0 +1,15 @@
+{
+  "company": "REITCo",
+  "sector": "Real Estate (REIT)",
+  "currency": "USD",
+  "incomeStatement": [
+    { "year": 2021, "noi": 240, "netIncome": 105, "ffo": 162, "affo": 148 },
+    { "year": 2022, "noi": 265, "netIncome": 118, "ffo": 178, "affo": 160 },
+    { "year": 2023, "noi": 280, "netIncome": 126, "ffo": 190, "affo": 172 }
+  ],
+  "valuation": {
+    "capRate": 0.055,
+    "navPerShare": 32.4,
+    "interestCoverage": 3.8
+  }
+}

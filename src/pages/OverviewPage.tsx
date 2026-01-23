@@ -1,236 +1,124 @@
-// Overview Dashboard Page
-import { useState } from 'react';
-import { useRisk } from '@/context/RiskContext';
-import { KPICard } from '@/components/dashboard/KPICard';
-import { ModelResultsTable, FullModelComparison } from '@/components/dashboard/ModelResultsTable';
-import { ReturnsHistogram } from '@/components/charts/ReturnsHistogram';
-import { ReturnsTimeSeries } from '@/components/charts/RollingVaRChart';
-import { DrawdownChart, CorrelationHeatmap } from '@/components/charts/CorrelationHeatmap';
-import { EmptyState, LoadingSkeleton } from '@/components/ui/EmptyState';
-import { VaRTutorial } from '@/components/tutorial/VaRTutorial';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type { ConfidenceLevel } from '@/lib/risk/types';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ArrowRight, Cpu, Database, FileText, Sparkles } from "lucide-react";
+import { Link } from "react-router-dom";
+
+const highlights = [
+  {
+    title: "Multi-stage valuation suite",
+    description: "FCFF/FCFE DCF, H-Model, APV, EVA, residual income, and implied valuation tools.",
+  },
+  {
+    title: "Sector playbooks",
+    description: "SaaS, banks, insurance, REITs, energy, consumer, and industrials with default KPI guidance.",
+  },
+  {
+    title: "Power-user modeling",
+    description: "Monte Carlo, scenario weights, tornado grids, and normalized EBITDA workflows.",
+  },
+  {
+    title: "Offline data hub",
+    description: "Bundled sample statements, mapping heuristics, and local-only import workflow.",
+  },
+];
 
 export default function OverviewPage() {
-  const { 
-    assets, 
-    returns, 
-    dates,
-    modelResults, 
-    metrics, 
-    correlationMatrix,
-    portfolioValue,
-    isLoading,
-  } = useRisk();
-  
-  const [selectedConfidence, setSelectedConfidence] = useState<ConfidenceLevel>(95);
-  
-  if (isLoading) {
-    return <LoadingSkeleton />;
-  }
-  
-  if (assets.length === 0) {
-    return (
-      <div className="space-y-6 fade-in">
-        <EmptyState />
-        
-        {/* Show tutorial even without data */}
-        <VaRTutorial />
-      </div>
-    );
-  }
-  
-  // Get VaR/ES values for display
-  const hsResult = modelResults.find(r => r.model === 'historical');
-  const var95 = hsResult?.results.find(r => r.confidence === 95 && r.horizon === 1);
-  const var99 = hsResult?.results.find(r => r.confidence === 99 && r.horizon === 1);
-  
-  const formatCurrency = (value: number) => 
-    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value);
-  
-  const formatPercent = (value: number) => 
-    `${(value * 100).toFixed(2)}%`;
-  
   return (
-    <div className="space-y-6 fade-in">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Risk Overview</h1>
-          <p className="text-muted-foreground text-sm">
-            Portfolio value: {formatCurrency(portfolioValue)}
+    <div className="space-y-8">
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+        <div className="space-y-3">
+          <Badge variant="outline" className="w-fit">Production-ready • Offline-first</Badge>
+          <h1 className="text-3xl font-semibold text-foreground">Valuation Lab Pro</h1>
+          <p className="max-w-2xl text-sm text-muted-foreground">
+            Build defensible valuations with institutional-grade tooling — multi-stage DCFs, sector playbooks, ratio
+            diagnostics, and board-ready reports. Designed to deploy on GitHub Pages with full offline capability.
           </p>
-        </div>
-      </div>
-      
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-        <KPICard
-          title="VaR (95%)"
-          value={var95 ? formatCurrency(var95.var) : '-'}
-          subtitle={var95 ? `${var95.varPercent.toFixed(2)}% of portfolio` : undefined}
-          accentColor="destructive"
-          tooltip="1-day 95% Value at Risk: There's a 5% chance of losing more than this amount in a single day."
-        />
-        <KPICard
-          title="VaR (99%)"
-          value={var99 ? formatCurrency(var99.var) : '-'}
-          subtitle={var99 ? `${var99.varPercent.toFixed(2)}% of portfolio` : undefined}
-          accentColor="destructive"
-          tooltip="1-day 99% Value at Risk: There's a 1% chance of losing more than this amount in a single day."
-        />
-        <KPICard
-          title="ES (95%)"
-          value={var95 ? formatCurrency(var95.es) : '-'}
-          subtitle={var95 ? `${var95.esPercent.toFixed(2)}% of portfolio` : undefined}
-          accentColor="warning"
-          tooltip="Expected Shortfall: Average loss when losses exceed VaR. Always greater than or equal to VaR."
-        />
-        <KPICard
-          title="Max Drawdown"
-          value={metrics ? formatPercent(metrics.maxDrawdown) : '-'}
-          accentColor="destructive"
-          tooltip="Maximum peak-to-trough decline in portfolio value over the observation period."
-        />
-        <KPICard
-          title="Volatility (Ann.)"
-          value={metrics ? formatPercent(metrics.annualizedVolatility) : '-'}
-          accentColor="primary"
-          tooltip="Annualized standard deviation of returns (assumes 252 trading days)."
-        />
-        <KPICard
-          title="Sharpe Ratio"
-          value={metrics ? metrics.sharpeRatio.toFixed(2) : '-'}
-          trend={metrics && metrics.sharpeRatio > 0.5 ? 'up' : metrics && metrics.sharpeRatio < 0 ? 'down' : 'neutral'}
-          accentColor={metrics && metrics.sharpeRatio > 0.5 ? 'success' : 'primary'}
-          tooltip="Risk-adjusted return: (Return - Risk-free rate) / Volatility. Higher is better."
-        />
-      </div>
-      
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="glass-card">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Returns Distribution
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ReturnsHistogram 
-              returns={returns}
-              varValue={var95?.varPercent ? var95.varPercent / 100 : undefined}
-              esValue={var95?.esPercent ? var95.esPercent / 100 : undefined}
-              title=""
-            />
-          </CardContent>
-        </Card>
-        
-        <Card className="glass-card">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Returns Time Series
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ReturnsTimeSeries returns={returns} dates={dates} title="" />
-          </CardContent>
-        </Card>
-      </div>
-      
-      {/* Model Comparison */}
-      <Card className="glass-card">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base font-semibold">Model Comparison</CardTitle>
-            <Tabs value={String(selectedConfidence)} onValueChange={(v) => setSelectedConfidence(Number(v) as ConfidenceLevel)}>
-              <TabsList className="h-8">
-                <TabsTrigger value="90" className="text-xs px-3 h-6">90%</TabsTrigger>
-                <TabsTrigger value="95" className="text-xs px-3 h-6">95%</TabsTrigger>
-                <TabsTrigger value="97.5" className="text-xs px-3 h-6">97.5%</TabsTrigger>
-                <TabsTrigger value="99" className="text-xs px-3 h-6">99%</TabsTrigger>
-              </TabsList>
-            </Tabs>
+          <div className="flex flex-wrap gap-3">
+            <Button asChild>
+              <Link to="/valuations" className="gap-2">
+                Launch Valuation Suite <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link to="/data" className="gap-2">
+                Open Data Hub <Database className="h-4 w-4" />
+              </Link>
+            </Button>
           </div>
-        </CardHeader>
-        <CardContent>
-          <ModelResultsTable 
-            results={modelResults} 
-            confidence={selectedConfidence}
-            horizon={1}
-          />
-        </CardContent>
-      </Card>
-      
-      {/* Additional Metrics Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="glass-card">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Drawdown
-            </CardTitle>
+        </div>
+        <Card className="lg:w-[360px]">
+          <CardHeader>
+            <CardTitle className="text-sm">Lab Status</CardTitle>
           </CardHeader>
-          <CardContent>
-            <DrawdownChart returns={returns} dates={dates} title="" />
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Mode</span>
+              <span className="font-medium">Offline + GitHub Pages</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Sample datasets</span>
+              <span className="font-medium">3 bundles</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Automation</span>
+              <span className="font-medium">Report Builder + Audit</span>
+            </div>
           </CardContent>
         </Card>
-        
-        {assets.length > 1 && correlationMatrix && (
-          <Card className="glass-card">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Asset Correlation
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CorrelationHeatmap 
-                correlationMatrix={correlationMatrix}
-                labels={assets.map(a => a.name)}
-                title=""
-              />
-            </CardContent>
-          </Card>
-        )}
-        
-        {assets.length === 1 && (
-          <Card className="glass-card">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Distribution Statistics
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground uppercase">Mean Return</p>
-                  <p className="font-mono text-lg">{metrics ? formatPercent(metrics.meanReturn) : '-'}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground uppercase">Daily Vol</p>
-                  <p className="font-mono text-lg">{metrics ? formatPercent(metrics.volatility) : '-'}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground uppercase">Skewness</p>
-                  <p className="font-mono text-lg">{metrics ? metrics.skewness.toFixed(3) : '-'}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground uppercase">Excess Kurtosis</p>
-                  <p className="font-mono text-lg">{metrics ? metrics.kurtosis.toFixed(3) : '-'}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
       </div>
-      
-      {/* Full Comparison Table */}
-      <Card className="glass-card">
-        <CardHeader>
-          <CardTitle className="text-base font-semibold">VaR Across Confidence Levels (1-Day)</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <FullModelComparison results={modelResults} horizon={1} />
-        </CardContent>
-      </Card>
+
+      <div className="grid gap-6 md:grid-cols-2">
+        {highlights.map((item) => (
+          <Card key={item.title} className="bg-gradient-to-br from-card to-card/80">
+            <CardHeader>
+              <CardTitle className="text-base">{item.title}</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-muted-foreground">{item.description}</CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-3">
+        <Card>
+          <CardHeader className="flex flex-row items-center gap-3">
+            <Cpu className="h-5 w-5 text-primary" />
+            <CardTitle className="text-base">Model inventory</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm text-muted-foreground">
+            <p>Expanded DCF, dividends, real options, SOTP, implied valuation, and upgraded LBO/M&A workflows.</p>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/valuations">Explore models</Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center gap-3">
+            <Sparkles className="h-5 w-5 text-primary" />
+            <CardTitle className="text-base">Power Mode</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm text-muted-foreground">
+            <p>Activate Monte Carlo distributions, scenario blending, and solver-driven WACC leverage loops.</p>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/power">Configure power mode</Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center gap-3">
+            <FileText className="h-5 w-5 text-primary" />
+            <CardTitle className="text-base">Reporting</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm text-muted-foreground">
+            <p>Assemble investor-ready reports with exportable HTML, CSV tables, and JSON project snapshots.</p>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/reports">Open report builder</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

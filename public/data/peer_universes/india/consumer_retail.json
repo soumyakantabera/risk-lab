@@ -1,0 +1,19 @@
+{
+  "universe_id": "india_consumer_retail",
+  "region": "india",
+  "sector": "consumer_retail",
+  "as_of_date": "2024-12-31",
+  "notes": "India consumer and retail leaders with nationwide distribution and listed equities.",
+  "tickers": [
+    { "ticker": "DMART.NS", "name": "Avenue Supermarts", "currency": "INR", "exchange": "NSE", "country": "IN", "subsector": "Grocery", "style": "growth", "market_cap_bucket": "Large" },
+    { "ticker": "TITAN.NS", "name": "Titan Company", "currency": "INR", "exchange": "NSE", "country": "IN", "subsector": "Luxury Retail", "style": "growth", "market_cap_bucket": "Large" },
+    { "ticker": "TRENT.NS", "name": "Trent", "currency": "INR", "exchange": "NSE", "country": "IN", "subsector": "Apparel", "style": "growth", "market_cap_bucket": "Mid" },
+    { "ticker": "HAVELLS.NS", "name": "Havells India", "currency": "INR", "exchange": "NSE", "country": "IN", "subsector": "Consumer Durables", "style": "blend", "market_cap_bucket": "Large" },
+    { "ticker": "MARICO.NS", "name": "Marico", "currency": "INR", "exchange": "NSE", "country": "IN", "subsector": "FMCG", "style": "blend", "market_cap_bucket": "Large" },
+    { "ticker": "DABUR.NS", "name": "Dabur", "currency": "INR", "exchange": "NSE", "country": "IN", "subsector": "FMCG", "style": "value", "market_cap_bucket": "Large" },
+    { "ticker": "COLPAL.NS", "name": "Colgate Palmolive India", "currency": "INR", "exchange": "NSE", "country": "IN", "subsector": "FMCG", "style": "value", "market_cap_bucket": "Mid" },
+    { "ticker": "TTKPRESTIG.NS", "name": "TTK Prestige", "currency": "INR", "exchange": "NSE", "country": "IN", "subsector": "Consumer Durables", "style": "blend", "market_cap_bucket": "Mid" },
+    { "ticker": "PAGEIND.NS", "name": "Page Industries", "currency": "INR", "exchange": "NSE", "country": "IN", "subsector": "Apparel", "style": "growth", "market_cap_bucket": "Large" },
+    { "ticker": "VBL.NS", "name": "Varun Beverages", "currency": "INR", "exchange": "NSE", "country": "IN", "subsector": "Beverages", "style": "growth", "market_cap_bucket": "Large" }
+  ]
+}

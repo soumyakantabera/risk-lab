@@ -1,0 +1,19 @@
+{
+  "universe_id": "uk_reit",
+  "region": "uk",
+  "sector": "reit",
+  "as_of_date": "2024-12-31",
+  "notes": "UK REITs focused on commercial, logistics, and residential property exposure.",
+  "tickers": [
+    { "ticker": "SGRO.L", "name": "Segro", "currency": "GBP", "exchange": "LSE", "country": "UK", "subsector": "Logistics", "style": "growth", "market_cap_bucket": "Large" },
+    { "ticker": "LAND.L", "name": "Landsec", "currency": "GBP", "exchange": "LSE", "country": "UK", "subsector": "Commercial", "style": "value", "market_cap_bucket": "Large" },
+    { "ticker": "BLND.L", "name": "British Land", "currency": "GBP", "exchange": "LSE", "country": "UK", "subsector": "Commercial", "style": "value", "market_cap_bucket": "Mid" },
+    { "ticker": "BBOX.L", "name": "Tritax Big Box", "currency": "GBP", "exchange": "LSE", "country": "UK", "subsector": "Logistics", "style": "growth", "market_cap_bucket": "Mid" },
+    { "ticker": "SREI.L", "name": "Schroder Real Estate", "currency": "GBP", "exchange": "LSE", "country": "UK", "subsector": "Diversified", "style": "value", "market_cap_bucket": "Small" },
+    { "ticker": "HMSO.L", "name": "Hammerson", "currency": "GBP", "exchange": "LSE", "country": "UK", "subsector": "Retail", "style": "value", "market_cap_bucket": "Small" },
+    { "ticker": "PHP.L", "name": "Primary Health Properties", "currency": "GBP", "exchange": "LSE", "country": "UK", "subsector": "Healthcare", "style": "blend", "market_cap_bucket": "Mid" },
+    { "ticker": "LMP.L", "name": "LondonMetric", "currency": "GBP", "exchange": "LSE", "country": "UK", "subsector": "Logistics", "style": "growth", "market_cap_bucket": "Mid" },
+    { "ticker": "GRI.L", "name": "Grainger", "currency": "GBP", "exchange": "LSE", "country": "UK", "subsector": "Residential", "style": "growth", "market_cap_bucket": "Mid" },
+    { "ticker": "UTG.L", "name": "Unite Group", "currency": "GBP", "exchange": "LSE", "country": "UK", "subsector": "Student Housing", "style": "growth", "market_cap_bucket": "Large" }
+  ]
+}
