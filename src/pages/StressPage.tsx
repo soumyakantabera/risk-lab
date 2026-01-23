@@ -3,7 +3,6 @@ import { useState, useMemo } from 'react';
 import { useRisk } from '@/context/RiskContext';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
@@ -21,9 +20,12 @@ import {
   Activity,
   ArrowDown,
   ArrowUp,
+  LineChart,
 } from 'lucide-react';
 import { historicalSimulation } from '@/lib/risk/models';
 import { mean, stdDev } from '@/lib/risk/statistics';
+import { HistoricalReplayPanel } from '@/components/stress/HistoricalReplayPanel';
+import { MonteCarloPathsChart } from '@/components/charts/MonteCarloPathsChart';
 
 interface StressResult {
   name: string;
@@ -37,10 +39,12 @@ interface StressResult {
 }
 
 export default function StressPage() {
-  const { assets, returns, portfolioValue } = useRisk();
+  const { assets, returns, dates, portfolioValue } = useRisk();
   
   const [shockPercent, setShockPercent] = useState(-5);
   const [volMultiplier, setVolMultiplier] = useState(1.5);
+  const [mcPaths, setMcPaths] = useState(200);
+  const [mcHorizon, setMcHorizon] = useState(30);
   
   const stressResults = useMemo(() => {
     if (returns.length === 0) return [];
@@ -268,6 +272,63 @@ export default function StressPage() {
         </CardContent>
       </Card>
       
+      {/* Historical Scenario Replay */}
+      <HistoricalReplayPanel 
+        returns={returns} 
+        dates={dates} 
+        portfolioValue={portfolioValue} 
+      />
+      
+      {/* Monte Carlo Simulation */}
+      <Card className="glass-card">
+        <CardHeader>
+          <CardTitle className="text-base font-semibold flex items-center gap-2">
+            <LineChart className="h-4 w-4 text-primary" />
+            Monte Carlo Simulation Paths
+          </CardTitle>
+          <CardDescription>
+            Visualize simulated portfolio value paths over time
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <Label>Number of Paths</Label>
+                <span className="font-mono text-sm text-primary">{mcPaths}</span>
+              </div>
+              <Slider
+                value={[mcPaths]}
+                onValueChange={([v]) => setMcPaths(v)}
+                min={50}
+                max={500}
+                step={50}
+              />
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <Label>Horizon (Days)</Label>
+                <span className="font-mono text-sm text-primary">{mcHorizon}</span>
+              </div>
+              <Slider
+                value={[mcHorizon]}
+                onValueChange={([v]) => setMcHorizon(v)}
+                min={10}
+                max={90}
+                step={5}
+              />
+            </div>
+          </div>
+          
+          <MonteCarloPathsChart
+            returns={returns}
+            portfolioValue={portfolioValue}
+            numPaths={mcPaths}
+            horizon={mcHorizon}
+          />
+        </CardContent>
+      </Card>
+      
       {/* Interpretation */}
       <Card className="bg-muted/30 border-border/30">
         <CardHeader className="pb-2">
@@ -277,8 +338,9 @@ export default function StressPage() {
           <ul className="text-sm text-muted-foreground space-y-2">
             <li>• <strong>Shock scenarios</strong> add extreme events to your historical sample, showing how tail risk changes.</li>
             <li>• <strong>Volatility stress</strong> scales all returns away from the mean, simulating sustained high-volatility regimes.</li>
+            <li>• <strong>Historical replay</strong> uses actual data from crisis periods to stress test your current portfolio.</li>
+            <li>• <strong>Monte Carlo paths</strong> show the range of possible portfolio outcomes under simulated market conditions.</li>
             <li>• <strong>Δ VaR/ES</strong> shows the increase in risk capital requirements under stressed conditions.</li>
-            <li>• Use these results to understand portfolio vulnerabilities and set appropriate capital buffers.</li>
           </ul>
         </CardContent>
       </Card>
