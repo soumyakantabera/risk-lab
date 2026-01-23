@@ -1,5 +1,5 @@
 // Backtesting engine for VaR models
-import { kupiecTest, normalQuantile, mean, stdDev, ewmaVolatility, christoffersenConditionalCoverageTest } from './statistics';
+import { kupiecTest, normalQuantile, mean, stdDev, ewmaVolatility, garch11Volatility, christoffersenConditionalCoverageTest } from './statistics';
 import type { BacktestResult, BacktestSummary, ConfidenceLevel, ModelType } from './types';
 
 interface BacktestOptions {
@@ -87,6 +87,17 @@ function calculateVaRES(
     case 'ewma': {
       const mu = mean(returns);
       const vols = ewmaVolatility(returns, lambda);
+      const sigma = vols[vols.length - 1] || stdDev(returns);
+      const z = normalQuantile(alpha);
+      const var_ = -mu + sigma * (-z);
+      const pdf = Math.exp(-z * z / 2) / Math.sqrt(2 * Math.PI);
+      const es = -mu + sigma * pdf / alpha;
+      return { var: var_, es };
+    }
+    
+    case 'garch': {
+      const mu = mean(returns);
+      const vols = garch11Volatility(returns);
       const sigma = vols[vols.length - 1] || stdDev(returns);
       const z = normalQuantile(alpha);
       const var_ = -mu + sigma * (-z);
