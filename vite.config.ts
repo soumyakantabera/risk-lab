@@ -6,8 +6,7 @@ import { componentTagger } from "lovable-tagger";
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   // Base path for GitHub Pages deployment
-  // Update this if your repo name is different
-  base: mode === "production" ? "/risklab/" : "/",
+  base: mode === "production" ? "/risk-buddy/" : "/",
   server: {
     host: "::",
     port: 8080,
