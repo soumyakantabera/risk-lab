@@ -1,4 +1,5 @@
 // Overview Dashboard Page
+import { useState } from 'react';
 import { useRisk } from '@/context/RiskContext';
 import { KPICard } from '@/components/dashboard/KPICard';
 import { ModelResultsTable, FullModelComparison } from '@/components/dashboard/ModelResultsTable';
@@ -6,10 +7,10 @@ import { ReturnsHistogram } from '@/components/charts/ReturnsHistogram';
 import { ReturnsTimeSeries } from '@/components/charts/RollingVaRChart';
 import { DrawdownChart, CorrelationHeatmap } from '@/components/charts/CorrelationHeatmap';
 import { EmptyState, LoadingSkeleton } from '@/components/ui/EmptyState';
+import { VaRTutorial } from '@/components/tutorial/VaRTutorial';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { ConfidenceLevel } from '@/lib/risk/types';
-import { useState } from 'react';
 
 export default function OverviewPage() {
   const { 
@@ -30,7 +31,14 @@ export default function OverviewPage() {
   }
   
   if (assets.length === 0) {
-    return <EmptyState />;
+    return (
+      <div className="space-y-6 fade-in">
+        <EmptyState />
+        
+        {/* Show tutorial even without data */}
+        <VaRTutorial />
+      </div>
+    );
   }
   
   // Get VaR/ES values for display
