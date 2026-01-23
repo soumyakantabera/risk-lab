@@ -1,0 +1,24 @@
+{
+  "universe_id": "global_semiconductors",
+  "region": "global",
+  "sector": "semiconductors",
+  "as_of_date": "2024-12-31",
+  "notes": "Global semiconductors across design, manufacturing, and equipment suppliers.",
+  "tickers": [
+    { "ticker": "NVDA", "name": "NVIDIA", "currency": "USD", "exchange": "NASDAQ", "country": "US", "subsector": "Design", "style": "growth", "market_cap_bucket": "Large" },
+    { "ticker": "TSM", "name": "TSMC", "currency": "USD", "exchange": "NYSE", "country": "TW", "subsector": "Foundry", "style": "blend", "market_cap_bucket": "Large" },
+    { "ticker": "ASML", "name": "ASML", "currency": "EUR", "exchange": "Euronext", "country": "NL", "subsector": "Equipment", "style": "growth", "market_cap_bucket": "Large" },
+    { "ticker": "AVGO", "name": "Broadcom", "currency": "USD", "exchange": "NASDAQ", "country": "US", "subsector": "Design", "style": "value", "market_cap_bucket": "Large" },
+    { "ticker": "AMD", "name": "AMD", "currency": "USD", "exchange": "NASDAQ", "country": "US", "subsector": "Design", "style": "growth", "market_cap_bucket": "Large" },
+    { "ticker": "INTC", "name": "Intel", "currency": "USD", "exchange": "NASDAQ", "country": "US", "subsector": "Design", "style": "value", "market_cap_bucket": "Large" },
+    { "ticker": "QCOM", "name": "Qualcomm", "currency": "USD", "exchange": "NASDAQ", "country": "US", "subsector": "Design", "style": "value", "market_cap_bucket": "Large" },
+    { "ticker": "TXN", "name": "Texas Instruments", "currency": "USD", "exchange": "NASDAQ", "country": "US", "subsector": "Analog", "style": "value", "market_cap_bucket": "Large" },
+    { "ticker": "NXPI", "name": "NXP Semiconductors", "currency": "USD", "exchange": "NASDAQ", "country": "NL", "subsector": "Auto", "style": "blend", "market_cap_bucket": "Large" },
+    { "ticker": "MU", "name": "Micron", "currency": "USD", "exchange": "NASDAQ", "country": "US", "subsector": "Memory", "style": "cycle", "market_cap_bucket": "Large" },
+    { "ticker": "AMAT", "name": "Applied Materials", "currency": "USD", "exchange": "NASDAQ", "country": "US", "subsector": "Equipment", "style": "value", "market_cap_bucket": "Large" },
+    { "ticker": "LRCX", "name": "Lam Research", "currency": "USD", "exchange": "NASDAQ", "country": "US", "subsector": "Equipment", "style": "value", "market_cap_bucket": "Large" },
+    { "ticker": "KLAC", "name": "KLA", "currency": "USD", "exchange": "NASDAQ", "country": "US", "subsector": "Equipment", "style": "value", "market_cap_bucket": "Large" },
+    { "ticker": "ASM.AS", "name": "ASM International", "currency": "EUR", "exchange": "Euronext", "country": "NL", "subsector": "Equipment", "style": "growth", "market_cap_bucket": "Mid" },
+    { "ticker": "UMC", "name": "UMC", "currency": "USD", "exchange": "NYSE", "country": "TW", "subsector": "Foundry", "style": "value", "market_cap_bucket": "Mid" }
+  ]
+}

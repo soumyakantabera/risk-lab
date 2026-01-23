@@ -1,0 +1,71 @@
+{
+  "meta": {
+    "ticker": "MSFT",
+    "currency": "USD",
+    "fiscalYearEnd": "2023-06-30",
+    "source": "sample",
+    "asOfDate": "2024-01-15"
+  },
+  "incomeStatement": {
+    "yearly": [
+      {
+        "date": "2023-06-30",
+        "revenue": 211915,
+        "grossProfit": 146052,
+        "operatingIncome": 88523,
+        "ebitda": 100000,
+        "netIncome": 72361
+      },
+      {
+        "date": "2022-06-30",
+        "revenue": 198270,
+        "grossProfit": 135620,
+        "operatingIncome": 83383,
+        "ebitda": 96000,
+        "netIncome": 72738
+      }
+    ],
+    "quarterly": [
+      {
+        "date": "2023-12-31",
+        "revenue": 62020,
+        "grossProfit": 43100,
+        "operatingIncome": 24700,
+        "ebitda": 28000,
+        "netIncome": 21900
+      }
+    ]
+  },
+  "balanceSheet": {
+    "yearly": [
+      {
+        "date": "2023-06-30",
+        "totalAssets": 411976,
+        "totalLiabilities": 205753,
+        "cashAndEquivalents": 34704,
+        "totalEquity": 206223
+      },
+      {
+        "date": "2022-06-30",
+        "totalAssets": 364840,
+        "totalLiabilities": 198298,
+        "cashAndEquivalents": 13931,
+        "totalEquity": 166542
+      }
+    ],
+    "quarterly": []
+  },
+  "lineItemMap": {
+    "totalRevenue": "revenue",
+    "grossProfit": "grossProfit",
+    "operatingIncome": "operatingIncome",
+    "netIncome": "netIncome",
+    "totalAssets": "totalAssets",
+    "totalLiab": "totalLiabilities",
+    "cash": "cashAndEquivalents",
+    "totalStockholderEquity": "totalEquity"
+  },
+  "sharesOut": 7420000000,
+  "marketCap": 2850000000000,
+  "price": 378.2
+}

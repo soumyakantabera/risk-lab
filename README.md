@@ -32,6 +32,23 @@ npm run dev
 - **Heavy-Tail**: Fat-tailed distribution with jump events  
 - **Multi-Asset**: 3 correlated assets with volatility regime shifts
 
+## Troubleshooting Yahoo fetch
+
+The Yahoo Finance endpoints used by the optional live data proxy are unofficial and can be unstable.
+If live data fails, the app automatically falls back to cached responses (when available) or the bundled
+sample datasets under `public/data/sample/`.
+
+Common issues and fixes:
+
+- **CORS errors / `Failed to fetch`**: Direct browser calls are blocked. Configure a proxy base URL in the
+  Data Hub settings and keep direct mode disabled in production.
+- **Proxy returns HTML**: Your proxy may be blocked or returning an error page. Ensure the proxy returns
+  JSON with the required `YahooProxyResponse` contract and CORS headers.
+- **404 from proxy**: Verify the route is `/api/yahoo/statements` and that the base URL is correct.
+- **Validation errors / upstream changes**: Yahoo response shapes can change. Update your proxy parser or
+  switch to sample/imported data.
+- **Rate limits**: Wait and retry, or use cached/sample data for offline workflows.
+
 ## Tech Stack
 
 React 18 + TypeScript + Vite + Tailwind CSS + shadcn/ui + Plotly.js
