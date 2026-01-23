@@ -1,5 +1,5 @@
 // Market Data Fetcher - Uses real APIs with caching, retry logic, and fallbacks
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -39,6 +39,7 @@ import {
   clearAllCache,
   clearOldCache
 } from '@/lib/api/marketData';
+import { PriceChartPreview } from './PriceChartPreview';
 
 interface TickerEntry {
   symbol: string;
@@ -191,6 +192,13 @@ export function MarketDataFetcher() {
       setProgress(100);
     }
   }, [selectedTickers, dateRange, isOnline, forceRefresh, cacheStats.count, updateCacheStats]);
+  
+  // Get successful assets for chart preview
+  const successfulAssets = useMemo(() => {
+    return results
+      .filter(r => r.success && r.data)
+      .map(r => r.data as FetchedAssetData);
+  }, [results]);
   
   const importToRiskLab = useCallback(() => {
     const successfulResults = results.filter(r => r.success && r.data);
@@ -473,6 +481,11 @@ export function MarketDataFetcher() {
               ))}
             </div>
             
+            {/* Price Chart Preview */}
+            {successfulAssets.length > 0 && (
+              <PriceChartPreview assets={successfulAssets} />
+            )}
+            
             <Button 
               onClick={importToRiskLab}
               variant="default"
@@ -480,7 +493,7 @@ export function MarketDataFetcher() {
               disabled={!results.some(r => r.success)}
             >
               <TrendingUp className="h-4 w-4 mr-2" />
-              Import to RiskLab
+              Import to RiskLab ({successfulAssets.length} asset{successfulAssets.length !== 1 ? 's' : ''})
             </Button>
           </div>
         )}
