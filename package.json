@@ -10,9 +10,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest",
-    "refresh-sample-data": "node scripts/refresh-sample-data.js",
-    "build-peer-universes": "node scripts/build_peer_universes.js"
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
