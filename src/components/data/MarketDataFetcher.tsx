@@ -37,7 +37,9 @@ import {
   CRYPTO_MAP,
   getCacheStats,
   clearAllCache,
-  clearOldCache
+  clearOldCache,
+  MARKETS,
+  MarketInfo
 } from '@/lib/api/marketData';
 import { PriceChartPreview } from './PriceChartPreview';
 
@@ -83,6 +85,7 @@ export function MarketDataFetcher() {
   const [selectedTickers, setSelectedTickers] = useState<string[]>(['SPY']);
   const [customTicker, setCustomTicker] = useState('');
   const [dateRange, setDateRange] = useState('1y');
+  const [selectedMarket, setSelectedMarket] = useState<string>('US');
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [results, setResults] = useState<FetchResult[]>([]);
@@ -90,6 +93,9 @@ export function MarketDataFetcher() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [forceRefresh, setForceRefresh] = useState(false);
   const [cacheStats, setCacheStats] = useState({ count: 0, totalSize: 0, symbols: [] as string[] });
+  
+  // Get current market info
+  const currentMarket = MARKETS.find(m => m.id === selectedMarket) || MARKETS[0];
   
   // Update cache stats
   const updateCacheStats = useCallback(() => {
@@ -159,7 +165,7 @@ export function MarketDataFetcher() {
         startDate,
         endDate,
         (completed, total) => setProgress((completed / total) * 100),
-        { useCache: true, forceRefresh }
+        { useCache: true, forceRefresh, marketId: selectedMarket }
       );
       
       const resultArray: FetchResult[] = [];
@@ -191,7 +197,7 @@ export function MarketDataFetcher() {
       setLoading(false);
       setProgress(100);
     }
-  }, [selectedTickers, dateRange, isOnline, forceRefresh, cacheStats.count, updateCacheStats]);
+  }, [selectedTickers, dateRange, selectedMarket, isOnline, forceRefresh, cacheStats.count, updateCacheStats]);
   
   // Get successful assets for chart preview
   const successfulAssets = useMemo(() => {
@@ -375,6 +381,44 @@ export function MarketDataFetcher() {
           </div>
         </div>
         
+        {/* Market Selection */}
+        <div className="space-y-2">
+          <Label className="text-sm font-medium">Market / Exchange</Label>
+          <Select value={selectedMarket} onValueChange={setSelectedMarket}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select market" />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.entries(
+                MARKETS.reduce((acc, m) => {
+                  if (!acc[m.region]) acc[m.region] = [];
+                  acc[m.region].push(m);
+                  return acc;
+                }, {} as Record<string, MarketInfo[]>)
+              ).map(([region, markets]) => (
+                <div key={region}>
+                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">
+                    {region}
+                  </div>
+                  {markets.map(market => (
+                    <SelectItem key={market.id} value={market.id}>
+                      <span className="flex items-center gap-2">
+                        <span>{market.name}</span>
+                        <span className="text-xs text-muted-foreground">({market.currency})</span>
+                      </span>
+                    </SelectItem>
+                  ))}
+                </div>
+              ))}
+            </SelectContent>
+          </Select>
+          {selectedMarket !== 'US' && (
+            <p className="text-xs text-muted-foreground">
+              Enter local ticker symbols (e.g., RELIANCE for NSE, VOD for LSE)
+            </p>
+          )}
+        </div>
+
         {/* Date Range & Options */}
         <div className="flex flex-wrap gap-4 items-end">
           <div className="space-y-2 flex-1 min-w-[140px]">
@@ -407,7 +451,7 @@ export function MarketDataFetcher() {
         </div>
         
         <p className="text-xs text-muted-foreground">
-          Crypto data limited to 1 year. Data cached for 4 hours.
+          Crypto data limited to 1 year. Data cached for 4 hours. Market: <strong>{currentMarket.name}</strong>
         </p>
         
         {/* Fetch Button */}
