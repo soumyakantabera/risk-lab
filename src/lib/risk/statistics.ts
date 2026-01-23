@@ -458,3 +458,218 @@ export function christoffersenConditionalCoverageTest(
 export function scaleToHorizon(value: number, fromHorizon: number, toHorizon: number): number {
   return value * Math.sqrt(toHorizon / fromHorizon);
 }
+
+/**
+ * GARCH(1,1) volatility estimation
+ * σ²_t = ω + α·r²_{t-1} + β·σ²_{t-1}
+ * Uses quasi-maximum likelihood estimation for parameters
+ */
+export interface GARCHParams {
+  omega: number;  // Long-run variance weight
+  alpha: number;  // Shock coefficient (ARCH term)
+  beta: number;   // Persistence coefficient (GARCH term)
+  unconditionalVariance: number;
+  persistence: number; // α + β (should be < 1 for stationarity)
+}
+
+export function estimateGARCH11(returns: number[], maxIterations: number = 100): GARCHParams {
+  const n = returns.length;
+  if (n < 20) {
+    // Not enough data, return EWMA-like defaults
+    const v = variance(returns);
+    return {
+      omega: v * 0.06,
+      alpha: 0.06,
+      beta: 0.94,
+      unconditionalVariance: v,
+      persistence: 1.0,
+    };
+  }
+
+  // Initialize with EWMA-inspired values
+  let alpha = 0.05;
+  let beta = 0.90;
+  const sampleVar = variance(returns);
+  
+  // Grid search for better starting values
+  let bestLogLik = -Infinity;
+  let bestAlpha = alpha;
+  let bestBeta = beta;
+  
+  for (let a = 0.02; a <= 0.15; a += 0.02) {
+    for (let b = 0.80; b <= 0.97; b += 0.02) {
+      if (a + b >= 1) continue;
+      const omega = sampleVar * (1 - a - b);
+      const logLik = garchLogLikelihood(returns, omega, a, b);
+      if (logLik > bestLogLik) {
+        bestLogLik = logLik;
+        bestAlpha = a;
+        bestBeta = b;
+      }
+    }
+  }
+  
+  alpha = bestAlpha;
+  beta = bestBeta;
+  
+  // Simple hill-climbing optimization
+  const step = 0.005;
+  for (let iter = 0; iter < maxIterations; iter++) {
+    const omega = sampleVar * (1 - alpha - beta);
+    const currentLogLik = garchLogLikelihood(returns, omega, alpha, beta);
+    
+    let improved = false;
+    
+    // Try adjusting alpha
+    for (const da of [-step, step]) {
+      const newAlpha = Math.max(0.001, Math.min(0.3, alpha + da));
+      if (newAlpha + beta >= 0.999) continue;
+      const newOmega = sampleVar * (1 - newAlpha - beta);
+      const newLogLik = garchLogLikelihood(returns, newOmega, newAlpha, beta);
+      if (newLogLik > currentLogLik + 1e-6) {
+        alpha = newAlpha;
+        improved = true;
+        break;
+      }
+    }
+    
+    // Try adjusting beta
+    for (const db of [-step, step]) {
+      const newBeta = Math.max(0.5, Math.min(0.995, beta + db));
+      if (alpha + newBeta >= 0.999) continue;
+      const newOmega = sampleVar * (1 - alpha - newBeta);
+      const newLogLik = garchLogLikelihood(returns, newOmega, alpha, newBeta);
+      if (newLogLik > currentLogLik + 1e-6) {
+        beta = newBeta;
+        improved = true;
+        break;
+      }
+    }
+    
+    if (!improved) break;
+  }
+  
+  const omega = sampleVar * (1 - alpha - beta);
+  const persistence = alpha + beta;
+  
+  return {
+    omega,
+    alpha,
+    beta,
+    unconditionalVariance: omega / (1 - persistence),
+    persistence,
+  };
+}
+
+/**
+ * Calculate log-likelihood for GARCH(1,1) model
+ */
+function garchLogLikelihood(returns: number[], omega: number, alpha: number, beta: number): number {
+  const n = returns.length;
+  let logLik = 0;
+  let sigma2 = variance(returns); // Initialize with sample variance
+  
+  for (let t = 1; t < n; t++) {
+    sigma2 = omega + alpha * returns[t - 1] * returns[t - 1] + beta * sigma2;
+    sigma2 = Math.max(sigma2, 1e-10); // Floor to avoid log(0)
+    logLik += -0.5 * (Math.log(2 * Math.PI) + Math.log(sigma2) + (returns[t] * returns[t]) / sigma2);
+  }
+  
+  return logLik;
+}
+
+/**
+ * Generate GARCH(1,1) conditional volatility series
+ */
+export function garch11Volatility(returns: number[], params?: GARCHParams): number[] {
+  const n = returns.length;
+  if (n === 0) return [];
+  
+  // Estimate parameters if not provided
+  const { omega, alpha, beta } = params || estimateGARCH11(returns);
+  
+  const vol: number[] = [];
+  let sigma2 = variance(returns); // Initialize with sample variance
+  vol.push(Math.sqrt(sigma2));
+  
+  for (let t = 1; t < n; t++) {
+    sigma2 = omega + alpha * returns[t - 1] * returns[t - 1] + beta * sigma2;
+    sigma2 = Math.max(sigma2, 1e-10);
+    vol.push(Math.sqrt(sigma2));
+  }
+  
+  return vol;
+}
+
+/**
+ * Basel Traffic Light System for VaR backtesting
+ * Based on 250 trading days at 99% confidence
+ * Green: 0-4 exceptions (model acceptable)
+ * Yellow: 5-9 exceptions (model questionable, investigate)
+ * Red: 10+ exceptions (model rejected)
+ */
+export interface BaselZone {
+  zone: 'green' | 'yellow' | 'red';
+  exceptions: number;
+  totalDays: number;
+  multiplier: number; // Capital multiplier for regulatory capital
+  description: string;
+  recommendation: string;
+}
+
+export function getBaselZone(exceptions: number, totalDays: number = 250): BaselZone {
+  // Scale thresholds if not using standard 250 days
+  const scaleFactor = totalDays / 250;
+  const greenThreshold = Math.round(4 * scaleFactor);
+  const yellowThreshold = Math.round(9 * scaleFactor);
+  
+  if (exceptions <= greenThreshold) {
+    return {
+      zone: 'green',
+      exceptions,
+      totalDays,
+      multiplier: 3.0,
+      description: `${exceptions} exceptions in ${totalDays} days — Model is acceptable`,
+      recommendation: 'No action required. Model performs within expected parameters.',
+    };
+  } else if (exceptions <= yellowThreshold) {
+    // Yellow zone has graduated multipliers
+    const yellowLevel = exceptions - greenThreshold;
+    const maxYellowLevels = yellowThreshold - greenThreshold;
+    const additionalMultiplier = (yellowLevel / maxYellowLevels) * 1.0; // Up to +1.0
+    
+    return {
+      zone: 'yellow',
+      exceptions,
+      totalDays,
+      multiplier: 3.0 + Math.round(additionalMultiplier * 10) / 10,
+      description: `${exceptions} exceptions in ${totalDays} days — Model requires investigation`,
+      recommendation: 'Review model assumptions. Consider parameter recalibration or stress testing enhancements.',
+    };
+  } else {
+    return {
+      zone: 'red',
+      exceptions,
+      totalDays,
+      multiplier: 4.0,
+      description: `${exceptions} exceptions in ${totalDays} days — Model rejected`,
+      recommendation: 'Immediate model review required. Consider alternative VaR methodology or significant parameter changes.',
+    };
+  }
+}
+
+/**
+ * Get detailed Basel zone thresholds for display
+ */
+export function getBaselZoneThresholds(totalDays: number = 250): {
+  green: { min: number; max: number };
+  yellow: { min: number; max: number };
+  red: { min: number };
+} {
+  const scaleFactor = totalDays / 250;
+  return {
+    green: { min: 0, max: Math.round(4 * scaleFactor) },
+    yellow: { min: Math.round(5 * scaleFactor), max: Math.round(9 * scaleFactor) },
+    red: { min: Math.round(10 * scaleFactor) },
+  };
+}

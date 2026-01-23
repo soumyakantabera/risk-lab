@@ -39,6 +39,11 @@ export interface ModelParameters {
   df?: number; // Degrees of freedom for t-distribution
   lambda?: number; // EWMA decay factor
   covMatrix?: number[][]; // Covariance matrix for multi-asset
+  // GARCH(1,1) parameters
+  omega?: number;
+  alpha?: number;
+  beta?: number;
+  persistence?: number;
 }
 
 export type ModelType = 
@@ -46,6 +51,7 @@ export type ModelType =
   | 'gaussian'
   | 'student-t'
   | 'ewma'
+  | 'garch'
   | 'monte-carlo'
   | 'filtered-hs';
 

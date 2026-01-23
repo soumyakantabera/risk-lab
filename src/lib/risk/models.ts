@@ -7,6 +7,8 @@ import {
   tQuantile,
   estimateStudentTDF,
   ewmaVolatility,
+  garch11Volatility,
+  estimateGARCH11,
   randomNormal,
   correlatedNormals,
   covarianceMatrix,
@@ -436,6 +438,63 @@ export function filteredHistoricalSimulation(
 }
 
 /**
+ * GARCH(1,1) VaR/ES
+ * Uses GARCH volatility forecasting for more accurate risk estimates
+ */
+export function garchVaR(
+  returns: number[],
+  portfolioValue: number = 1
+): ModelResult {
+  const startTime = performance.now();
+  const mu = mean(returns);
+  
+  // Estimate GARCH parameters
+  const garchParams = estimateGARCH11(returns);
+  const vols = garch11Volatility(returns, garchParams);
+  const currentVol = vols[vols.length - 1] || stdDev(returns);
+  
+  const results: VaRResult[] = [];
+  
+  for (const confidence of CONFIDENCE_LEVELS) {
+    const alpha = 1 - confidence / 100;
+    const z = normalQuantile(alpha);
+    
+    const var1D = -mu + currentVol * (-z);
+    const pdf = Math.exp(-z * z / 2) / Math.sqrt(2 * Math.PI);
+    const es1D = -mu + currentVol * pdf / alpha;
+    
+    for (const horizon of TIME_HORIZONS) {
+      const varH = scaleToHorizon(var1D, 1, horizon);
+      const esH = scaleToHorizon(es1D, 1, horizon);
+      
+      results.push({
+        confidence,
+        horizon,
+        var: varH * portfolioValue,
+        es: esH * portfolioValue,
+        varPercent: varH * 100,
+        esPercent: esH * 100,
+      });
+    }
+  }
+  
+  return {
+    model: 'garch',
+    modelName: 'GARCH(1,1)',
+    results,
+    parameters: { 
+      mu, 
+      sigma: currentVol,
+      omega: garchParams.omega,
+      alpha: garchParams.alpha,
+      beta: garchParams.beta,
+      persistence: garchParams.persistence,
+    },
+    computeTime: performance.now() - startTime,
+  };
+}
+
+/**
  * Run all models and return results
  */
 export function runAllModels(
@@ -448,6 +507,7 @@ export function runAllModels(
     gaussianVaR(returns, portfolioValue),
     studentTVaR(returns, portfolioValue),
     ewmaVaR(returns, portfolioValue, lambda),
+    garchVaR(returns, portfolioValue),
     monteCarloVaR(returns, portfolioValue, 10000),
     filteredHistoricalSimulation(returns, portfolioValue, lambda),
   ];

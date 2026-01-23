@@ -16,22 +16,26 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Progress } from '@/components/ui/progress';
 import { 
   CheckCircle, 
   AlertTriangle, 
   XCircle,
   TrendingDown,
-  Calendar
+  Calendar,
+  Shield,
+  CircleDot
 } from 'lucide-react';
 import { RollingVaRChart } from '@/components/charts/RollingVaRChart';
 import { rollingBacktest, generateBacktestSummary, calculateESCoverage } from '@/lib/risk/backtest';
-import type { ConfidenceLevel, ModelType, BacktestSummary } from '@/lib/risk/types';
+import { getBaselZone, getBaselZoneThresholds } from '@/lib/risk/statistics';
+import type { ConfidenceLevel, ModelType } from '@/lib/risk/types';
 
 export default function BacktestPage() {
   const { assets, returns, dates } = useRisk();
   
   const [window, setWindow] = useState(250);
-  const [confidence, setConfidence] = useState<ConfidenceLevel>(95);
+  const [confidence, setConfidence] = useState<ConfidenceLevel>(99); // Basel uses 99%
   const [model, setModel] = useState<ModelType>('historical');
   
   const backtestResults = useMemo(() => {
@@ -48,6 +52,17 @@ export default function BacktestPage() {
     if (backtestResults.length === 0) return null;
     return calculateESCoverage(backtestResults);
   }, [backtestResults]);
+  
+  // Basel traffic light zone
+  const baselZone = useMemo(() => {
+    if (!summary) return null;
+    return getBaselZone(summary.exceptions, summary.totalDays);
+  }, [summary]);
+  
+  const baselThresholds = useMemo(() => {
+    if (!summary) return null;
+    return getBaselZoneThresholds(summary.totalDays);
+  }, [summary]);
   
   if (assets.length === 0) {
     return <EmptyState />;
@@ -86,12 +101,25 @@ export default function BacktestPage() {
       ? 'text-warning' 
       : 'text-destructive';
   
+  // Basel zone colors
+  const baselZoneColor = baselZone?.zone === 'green' 
+    ? 'bg-success' 
+    : baselZone?.zone === 'yellow' 
+      ? 'bg-warning' 
+      : 'bg-destructive';
+  
+  const baselZoneTextColor = baselZone?.zone === 'green' 
+    ? 'text-success' 
+    : baselZone?.zone === 'yellow' 
+      ? 'text-warning' 
+      : 'text-destructive';
+  
   return (
     <div className="space-y-6 fade-in">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Backtesting</h1>
         <p className="text-muted-foreground text-sm">
-          Validate VaR models with Kupiec POF test and Christoffersen conditional coverage test
+          Validate VaR models with Basel traffic light system and statistical tests
         </p>
       </div>
       
@@ -129,10 +157,101 @@ export default function BacktestPage() {
               <TabsTrigger value="historical">Historical</TabsTrigger>
               <TabsTrigger value="gaussian">Gaussian</TabsTrigger>
               <TabsTrigger value="ewma">EWMA</TabsTrigger>
+              <TabsTrigger value="garch">GARCH</TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
       </div>
+      
+      {/* Basel Traffic Light System */}
+      {baselZone && baselThresholds && (
+        <Card className="glass-card border-2 border-border/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-semibold flex items-center gap-2">
+              <Shield className="h-5 w-5" />
+              Basel Traffic Light System
+              <Badge variant="outline" className="ml-2">
+                Regulatory Compliance
+              </Badge>
+            </CardTitle>
+            <CardDescription>
+              Basel Committee framework for internal VaR model validation (99% confidence, 250-day window)
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Traffic Light Visual */}
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-2">
+                <div className={`h-8 w-8 rounded-full flex items-center justify-center ${baselZone.zone === 'green' ? 'bg-success ring-4 ring-success/30' : 'bg-success/20'}`}>
+                  {baselZone.zone === 'green' && <CheckCircle className="h-5 w-5 text-success-foreground" />}
+                </div>
+                <div className="text-xs">
+                  <p className="font-medium">Green Zone</p>
+                  <p className="text-muted-foreground">0-{baselThresholds.green.max}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className={`h-8 w-8 rounded-full flex items-center justify-center ${baselZone.zone === 'yellow' ? 'bg-warning ring-4 ring-warning/30' : 'bg-warning/20'}`}>
+                  {baselZone.zone === 'yellow' && <AlertTriangle className="h-5 w-5 text-warning-foreground" />}
+                </div>
+                <div className="text-xs">
+                  <p className="font-medium">Yellow Zone</p>
+                  <p className="text-muted-foreground">{baselThresholds.yellow.min}-{baselThresholds.yellow.max}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className={`h-8 w-8 rounded-full flex items-center justify-center ${baselZone.zone === 'red' ? 'bg-destructive ring-4 ring-destructive/30' : 'bg-destructive/20'}`}>
+                  {baselZone.zone === 'red' && <XCircle className="h-5 w-5 text-destructive-foreground" />}
+                </div>
+                <div className="text-xs">
+                  <p className="font-medium">Red Zone</p>
+                  <p className="text-muted-foreground">≥{baselThresholds.red.min}</p>
+                </div>
+              </div>
+            </div>
+            
+            {/* Current Status */}
+            <div className={`p-4 rounded-lg border-2 ${baselZone.zone === 'green' ? 'bg-success/10 border-success/30' : baselZone.zone === 'yellow' ? 'bg-warning/10 border-warning/30' : 'bg-destructive/10 border-destructive/30'}`}>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <CircleDot className={`h-4 w-4 ${baselZoneTextColor}`} />
+                  <span className={`font-semibold capitalize ${baselZoneTextColor}`}>
+                    {baselZone.zone} Zone
+                  </span>
+                </div>
+                <Badge variant="secondary" className="font-mono">
+                  Multiplier: {baselZone.multiplier.toFixed(1)}×
+                </Badge>
+              </div>
+              <p className="text-sm text-muted-foreground">{baselZone.description}</p>
+              <p className="text-xs text-muted-foreground mt-2 italic">{baselZone.recommendation}</p>
+            </div>
+            
+            {/* Exception Progress Bar */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">Exception count: {summary?.exceptions || 0} of {summary?.totalDays || 0} days</span>
+                <span className="font-mono">{((summary?.exceptionRate || 0) * 100).toFixed(2)}% vs expected {((1 - confidence / 100) * 100).toFixed(1)}%</span>
+              </div>
+              <div className="relative h-3 bg-muted rounded-full overflow-hidden">
+                <div 
+                  className={`absolute left-0 top-0 h-full ${baselZoneColor} transition-all duration-500`}
+                  style={{ width: `${Math.min(100, ((summary?.exceptions || 0) / (baselThresholds.red.min + 5)) * 100)}%` }}
+                />
+                {/* Zone markers */}
+                <div 
+                  className="absolute top-0 h-full w-0.5 bg-success-foreground/50"
+                  style={{ left: `${(baselThresholds.green.max / (baselThresholds.red.min + 5)) * 100}%` }}
+                />
+                <div 
+                  className="absolute top-0 h-full w-0.5 bg-warning-foreground/50"
+                  style={{ left: `${(baselThresholds.yellow.max / (baselThresholds.red.min + 5)) * 100}%` }}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
       
       {/* Summary Status */}
       {summary && (

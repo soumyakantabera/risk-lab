@@ -38,6 +38,10 @@ const modelDescriptions: Record<ModelType, { name: string; description: string }
     name: 'EWMA',
     description: 'Exponentially Weighted Moving Average volatility. Gives more weight to recent observations.',
   },
+  'garch': {
+    name: 'GARCH(1,1)',
+    description: 'Generalized Autoregressive Conditional Heteroskedasticity. Captures volatility clustering with mean reversion.',
+  },
   'monte-carlo': {
     name: 'Monte Carlo (GBM)',
     description: 'Simulates thousands of price paths using Geometric Brownian Motion.',
@@ -254,8 +258,9 @@ export default function ModelsPage() {
                 <TableHead>Model</TableHead>
                 <TableHead className="text-right">μ (Mean)</TableHead>
                 <TableHead className="text-right">σ (Volatility)</TableHead>
-                <TableHead className="text-right">df (Degrees of Freedom)</TableHead>
-                <TableHead className="text-right">λ (Lambda)</TableHead>
+                <TableHead className="text-right">df / λ / α+β</TableHead>
+                <TableHead className="text-right">GARCH α</TableHead>
+                <TableHead className="text-right">GARCH β</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -274,12 +279,21 @@ export default function ModelsPage() {
                   </TableCell>
                   <TableCell className="text-right font-mono">
                     {model.parameters.df !== undefined 
-                      ? model.parameters.df.toFixed(2) 
+                      ? `df=${model.parameters.df.toFixed(2)}`
+                      : model.parameters.lambda !== undefined 
+                        ? `λ=${model.parameters.lambda.toFixed(2)}`
+                        : model.parameters.persistence !== undefined
+                          ? `α+β=${model.parameters.persistence.toFixed(3)}`
+                          : '-'}
+                  </TableCell>
+                  <TableCell className="text-right font-mono">
+                    {model.parameters.alpha !== undefined 
+                      ? model.parameters.alpha.toFixed(4) 
                       : '-'}
                   </TableCell>
                   <TableCell className="text-right font-mono">
-                    {model.parameters.lambda !== undefined 
-                      ? model.parameters.lambda.toFixed(2) 
+                    {model.parameters.beta !== undefined 
+                      ? model.parameters.beta.toFixed(4) 
                       : '-'}
                   </TableCell>
                 </TableRow>
