@@ -41,6 +41,9 @@ export function PriceChartPreview({ assets }: PriceChartPreviewProps) {
       change: number;
       changePercent: number;
       currency: string;
+      volatility: number;
+      annualizedVol: number;
+      sharpeRatio: number;
     }> = [];
     
     assets.forEach((asset, index) => {
@@ -50,6 +53,27 @@ export function PriceChartPreview({ assets }: PriceChartPreviewProps) {
       
       const firstPrice = prices[0] || 1;
       const normalizedPrices = prices.map(p => ((p - firstPrice) / firstPrice) * 100);
+      
+      // Calculate daily returns for volatility
+      const dailyReturns: number[] = [];
+      for (let i = 1; i < prices.length; i++) {
+        const ret = (prices[i] - prices[i - 1]) / prices[i - 1];
+        dailyReturns.push(ret);
+      }
+      
+      // Calculate volatility (standard deviation of returns)
+      const meanReturn = dailyReturns.length > 0 
+        ? dailyReturns.reduce((a, b) => a + b, 0) / dailyReturns.length 
+        : 0;
+      const variance = dailyReturns.length > 1
+        ? dailyReturns.reduce((sum, r) => sum + Math.pow(r - meanReturn, 2), 0) / (dailyReturns.length - 1)
+        : 0;
+      const dailyVol = Math.sqrt(variance);
+      const annualizedVol = dailyVol * Math.sqrt(252); // Annualized volatility
+      
+      // Calculate Sharpe Ratio (assuming risk-free rate of 0 for simplicity)
+      const annualizedReturn = meanReturn * 252;
+      const sharpeRatio = annualizedVol > 0 ? annualizedReturn / annualizedVol : 0;
       
       // Percent change trace
       percentData.push({
@@ -91,6 +115,9 @@ export function PriceChartPreview({ assets }: PriceChartPreviewProps) {
         change,
         changePercent,
         currency: asset.currency || 'USD',
+        volatility: dailyVol * 100, // Convert to percentage
+        annualizedVol: annualizedVol * 100, // Convert to percentage
+        sharpeRatio,
       });
     });
     
@@ -198,7 +225,7 @@ export function PriceChartPreview({ assets }: PriceChartPreviewProps) {
           {stats.map(stat => (
             <div
               key={stat.symbol}
-              className="flex flex-col gap-1 p-2 rounded-lg bg-muted/50 border"
+              className="flex flex-col gap-1.5 p-2 rounded-lg bg-muted/50 border"
               style={{ borderColor: stat.color }}
             >
               <div className="flex items-center justify-between">
@@ -217,6 +244,19 @@ export function PriceChartPreview({ assets }: PriceChartPreviewProps) {
               </Badge>
               <div className="text-[10px] text-muted-foreground">
                 ${stat.startPrice.toFixed(2)} → ${stat.endPrice.toFixed(2)}
+              </div>
+              {/* Volatility & Sharpe */}
+              <div className="grid grid-cols-2 gap-1 pt-1 border-t border-border/50">
+                <div className="text-center">
+                  <div className="text-[9px] text-muted-foreground">Vol (Ann)</div>
+                  <div className="text-[10px] font-medium">{stat.annualizedVol.toFixed(1)}%</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-[9px] text-muted-foreground">Sharpe</div>
+                  <div className={`text-[10px] font-medium ${stat.sharpeRatio >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                    {stat.sharpeRatio.toFixed(2)}
+                  </div>
+                </div>
               </div>
             </div>
           ))}

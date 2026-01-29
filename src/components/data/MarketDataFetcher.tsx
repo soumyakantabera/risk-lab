@@ -49,20 +49,127 @@ interface TickerEntry {
   type: 'stock' | 'etf' | 'crypto';
 }
 
-const POPULAR_TICKERS: TickerEntry[] = [
-  { symbol: 'SPY', name: 'S&P 500 ETF', type: 'etf' },
-  { symbol: 'QQQ', name: 'Nasdaq 100 ETF', type: 'etf' },
-  { symbol: 'IWM', name: 'Russell 2000 ETF', type: 'etf' },
-  { symbol: 'AAPL', name: 'Apple Inc.', type: 'stock' },
-  { symbol: 'MSFT', name: 'Microsoft Corp.', type: 'stock' },
-  { symbol: 'GOOGL', name: 'Alphabet Inc.', type: 'stock' },
-  { symbol: 'AMZN', name: 'Amazon.com Inc.', type: 'stock' },
-  { symbol: 'TSLA', name: 'Tesla Inc.', type: 'stock' },
-  { symbol: 'GLD', name: 'Gold ETF', type: 'etf' },
-  { symbol: 'TLT', name: '20+ Year Treasury ETF', type: 'etf' },
+// Market-specific popular tickers
+const POPULAR_TICKERS_BY_MARKET: Record<string, TickerEntry[]> = {
+  US: [
+    { symbol: 'SPY', name: 'S&P 500 ETF', type: 'etf' },
+    { symbol: 'QQQ', name: 'Nasdaq 100 ETF', type: 'etf' },
+    { symbol: 'IWM', name: 'Russell 2000 ETF', type: 'etf' },
+    { symbol: 'AAPL', name: 'Apple Inc.', type: 'stock' },
+    { symbol: 'MSFT', name: 'Microsoft Corp.', type: 'stock' },
+    { symbol: 'GOOGL', name: 'Alphabet Inc.', type: 'stock' },
+    { symbol: 'AMZN', name: 'Amazon.com Inc.', type: 'stock' },
+    { symbol: 'TSLA', name: 'Tesla Inc.', type: 'stock' },
+    { symbol: 'GLD', name: 'Gold ETF', type: 'etf' },
+    { symbol: 'TLT', name: '20+ Year Treasury ETF', type: 'etf' },
+  ],
+  NSE: [
+    { symbol: 'RELIANCE', name: 'Reliance Industries', type: 'stock' },
+    { symbol: 'TCS', name: 'Tata Consultancy', type: 'stock' },
+    { symbol: 'HDFCBANK', name: 'HDFC Bank', type: 'stock' },
+    { symbol: 'INFY', name: 'Infosys', type: 'stock' },
+    { symbol: 'ICICIBANK', name: 'ICICI Bank', type: 'stock' },
+    { symbol: 'HINDUNILVR', name: 'Hindustan Unilever', type: 'stock' },
+    { symbol: 'SBIN', name: 'State Bank of India', type: 'stock' },
+    { symbol: 'BHARTIARTL', name: 'Bharti Airtel', type: 'stock' },
+    { symbol: 'ITC', name: 'ITC Limited', type: 'stock' },
+    { symbol: 'KOTAKBANK', name: 'Kotak Mahindra Bank', type: 'stock' },
+  ],
+  LSE: [
+    { symbol: 'SHEL', name: 'Shell PLC', type: 'stock' },
+    { symbol: 'HSBA', name: 'HSBC Holdings', type: 'stock' },
+    { symbol: 'BP', name: 'BP PLC', type: 'stock' },
+    { symbol: 'AZN', name: 'AstraZeneca', type: 'stock' },
+    { symbol: 'VOD', name: 'Vodafone Group', type: 'stock' },
+    { symbol: 'GSK', name: 'GSK PLC', type: 'stock' },
+    { symbol: 'ULVR', name: 'Unilever PLC', type: 'stock' },
+    { symbol: 'RIO', name: 'Rio Tinto', type: 'stock' },
+    { symbol: 'LLOY', name: 'Lloyds Banking', type: 'stock' },
+    { symbol: 'BARC', name: 'Barclays PLC', type: 'stock' },
+  ],
+  TSE: [
+    { symbol: '7203', name: 'Toyota Motor', type: 'stock' },
+    { symbol: '6758', name: 'Sony Group', type: 'stock' },
+    { symbol: '9984', name: 'SoftBank Group', type: 'stock' },
+    { symbol: '6861', name: 'Keyence', type: 'stock' },
+    { symbol: '9432', name: 'NTT', type: 'stock' },
+    { symbol: '6098', name: 'Recruit Holdings', type: 'stock' },
+    { symbol: '8306', name: 'Mitsubishi UFJ', type: 'stock' },
+    { symbol: '6501', name: 'Hitachi', type: 'stock' },
+    { symbol: '7974', name: 'Nintendo', type: 'stock' },
+    { symbol: '4063', name: 'Shin-Etsu Chemical', type: 'stock' },
+  ],
+  HKEX: [
+    { symbol: '0700', name: 'Tencent Holdings', type: 'stock' },
+    { symbol: '9988', name: 'Alibaba Group', type: 'stock' },
+    { symbol: '0941', name: 'China Mobile', type: 'stock' },
+    { symbol: '1299', name: 'AIA Group', type: 'stock' },
+    { symbol: '0005', name: 'HSBC Holdings', type: 'stock' },
+    { symbol: '2318', name: 'Ping An Insurance', type: 'stock' },
+    { symbol: '3690', name: 'Meituan', type: 'stock' },
+    { symbol: '9618', name: 'JD.com', type: 'stock' },
+    { symbol: '0388', name: 'HK Exchanges', type: 'stock' },
+    { symbol: '1810', name: 'Xiaomi Corp', type: 'stock' },
+  ],
+  XETRA: [
+    { symbol: 'SAP', name: 'SAP SE', type: 'stock' },
+    { symbol: 'SIE', name: 'Siemens AG', type: 'stock' },
+    { symbol: 'ALV', name: 'Allianz SE', type: 'stock' },
+    { symbol: 'DTE', name: 'Deutsche Telekom', type: 'stock' },
+    { symbol: 'BAS', name: 'BASF SE', type: 'stock' },
+    { symbol: 'MBG', name: 'Mercedes-Benz', type: 'stock' },
+    { symbol: 'BMW', name: 'BMW AG', type: 'stock' },
+    { symbol: 'MUV2', name: 'Munich Re', type: 'stock' },
+    { symbol: 'VOW3', name: 'Volkswagen AG', type: 'stock' },
+    { symbol: 'ADS', name: 'Adidas AG', type: 'stock' },
+  ],
+  EURONEXT: [
+    { symbol: 'OR', name: "L'Oréal", type: 'stock' },
+    { symbol: 'MC', name: 'LVMH', type: 'stock' },
+    { symbol: 'TTE', name: 'TotalEnergies', type: 'stock' },
+    { symbol: 'SAN', name: 'Sanofi', type: 'stock' },
+    { symbol: 'AIR', name: 'Airbus SE', type: 'stock' },
+    { symbol: 'BNP', name: 'BNP Paribas', type: 'stock' },
+    { symbol: 'AI', name: 'Air Liquide', type: 'stock' },
+    { symbol: 'SU', name: 'Schneider Electric', type: 'stock' },
+    { symbol: 'EL', name: 'EssilorLuxottica', type: 'stock' },
+    { symbol: 'KER', name: 'Kering', type: 'stock' },
+  ],
+  ASX: [
+    { symbol: 'BHP', name: 'BHP Group', type: 'stock' },
+    { symbol: 'CBA', name: 'Commonwealth Bank', type: 'stock' },
+    { symbol: 'CSL', name: 'CSL Limited', type: 'stock' },
+    { symbol: 'NAB', name: 'National Australia Bank', type: 'stock' },
+    { symbol: 'WBC', name: 'Westpac Banking', type: 'stock' },
+    { symbol: 'ANZ', name: 'ANZ Group', type: 'stock' },
+    { symbol: 'WES', name: 'Wesfarmers', type: 'stock' },
+    { symbol: 'MQG', name: 'Macquarie Group', type: 'stock' },
+    { symbol: 'FMG', name: 'Fortescue Metals', type: 'stock' },
+    { symbol: 'RIO', name: 'Rio Tinto', type: 'stock' },
+  ],
+  TSX: [
+    { symbol: 'RY', name: 'Royal Bank of Canada', type: 'stock' },
+    { symbol: 'TD', name: 'Toronto-Dominion Bank', type: 'stock' },
+    { symbol: 'ENB', name: 'Enbridge Inc', type: 'stock' },
+    { symbol: 'CNR', name: 'Canadian National Railway', type: 'stock' },
+    { symbol: 'BMO', name: 'Bank of Montreal', type: 'stock' },
+    { symbol: 'CP', name: 'Canadian Pacific', type: 'stock' },
+    { symbol: 'BN', name: 'Brookfield Corp', type: 'stock' },
+    { symbol: 'BCE', name: 'BCE Inc', type: 'stock' },
+    { symbol: 'SHOP', name: 'Shopify Inc', type: 'stock' },
+    { symbol: 'SU', name: 'Suncor Energy', type: 'stock' },
+  ],
+};
+
+const CRYPTO_TICKERS: TickerEntry[] = [
   { symbol: 'BTC', name: 'Bitcoin', type: 'crypto' },
   { symbol: 'ETH', name: 'Ethereum', type: 'crypto' },
 ];
+
+// Get tickers for the selected market
+const getPopularTickers = (marketId: string): TickerEntry[] => {
+  return POPULAR_TICKERS_BY_MARKET[marketId] || POPULAR_TICKERS_BY_MARKET['US'];
+};
 
 const DATE_RANGES = [
   { value: '3m', label: '3 Months', days: 90 },
@@ -138,7 +245,8 @@ export function MarketDataFetcher() {
   
   const getTickerBadgeVariant = (symbol: string): 'default' | 'secondary' | 'outline' => {
     if (CRYPTO_MAP[symbol]) return 'default';
-    const ticker = POPULAR_TICKERS.find(t => t.symbol === symbol);
+    const popularTickers = getPopularTickers(selectedMarket);
+    const ticker = popularTickers.find(t => t.symbol === symbol);
     if (ticker?.type === 'etf') return 'secondary';
     return 'outline';
   };
@@ -351,8 +459,8 @@ export function MarketDataFetcher() {
           
           <div className="space-y-2">
             <div className="flex flex-wrap gap-1">
-              <span className="text-xs text-muted-foreground mr-2">Stocks/ETFs:</span>
-              {POPULAR_TICKERS.filter(t => t.type !== 'crypto').slice(0, 8).map(ticker => (
+              <span className="text-xs text-muted-foreground mr-2">Popular ({currentMarket.name}):</span>
+              {getPopularTickers(selectedMarket).slice(0, 8).map(ticker => (
                 <button
                   key={ticker.symbol}
                   onClick={() => addTicker(ticker.symbol)}
@@ -366,7 +474,7 @@ export function MarketDataFetcher() {
             </div>
             <div className="flex flex-wrap gap-1">
               <span className="text-xs text-muted-foreground mr-2">Crypto:</span>
-              {POPULAR_TICKERS.filter(t => t.type === 'crypto').map(ticker => (
+              {CRYPTO_TICKERS.map(ticker => (
                 <button
                   key={ticker.symbol}
                   onClick={() => addTicker(ticker.symbol)}
