@@ -113,12 +113,13 @@ export function clearAllCache(): void {
 }
 
 // ============= CORS PROXIES =============
-// Multiple fallback proxies for reliability
+// Multiple fallback proxies for reliability - ordered by reliability
 const CORS_PROXIES = [
   { url: 'https://api.allorigins.win/raw?url=', name: 'AllOrigins' },
-  { url: 'https://corsproxy.io/?', name: 'CorsProxy.io' },
-  { url: 'https://api.codetabs.com/v1/proxy?quest=', name: 'CodeTabs' },
+  { url: 'https://corsproxy.org/?', name: 'CorsProxy.org' }, // Different from corsproxy.io
+  { url: 'https://proxy.cors.sh/', name: 'CorsShProxy' },
   { url: 'https://thingproxy.freeboard.io/fetch/', name: 'ThingProxy' },
+  { url: 'https://yacdn.org/proxy/', name: 'YaCDN' },
 ];
 
 // ============= RETRY LOGIC =============
@@ -204,6 +205,22 @@ async function fetchWithProxy(url: string): Promise<Response> {
         { maxRetries: 1, baseDelay: 500, maxDelay: 2000 }
       );
       
+      // Check if response looks like valid JSON before returning
+      // Some proxies return error text instead of JSON
+      const contentType = response.headers.get('content-type');
+      if (contentType && !contentType.includes('application/json')) {
+        // Clone and check the first few bytes
+        const clone = response.clone();
+        const text = await clone.text();
+        if (text.startsWith('Edge:') || text.includes('Too Many Requests') || text.includes('error')) {
+          throw new Error(`Proxy returned error: ${text.slice(0, 100)}`);
+        }
+        // If it looks like JSON anyway, continue
+        if (!text.startsWith('{') && !text.startsWith('[')) {
+          throw new Error(`Invalid response format from ${proxy.name}`);
+        }
+      }
+      
       console.log(`[MarketData] ${proxy.name} succeeded`);
       return response;
     } catch (err) {
@@ -212,7 +229,7 @@ async function fetchWithProxy(url: string): Promise<Response> {
     }
   }
   
-  throw lastError || new Error('All proxies failed');
+  throw lastError || new Error('All CORS proxies failed. Try again in a few minutes or use cached data.');
 }
 
 // ============= YAHOO FINANCE =============
@@ -227,7 +244,15 @@ export async function fetchYahooFinance(
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?period1=${period1}&period2=${period2}&interval=1d&events=history`;
   
   const response = await fetchWithProxy(url);
-  const json = await response.json();
+  
+  // Parse response text first to handle non-JSON errors
+  const text = await response.text();
+  let json;
+  try {
+    json = JSON.parse(text);
+  } catch {
+    throw new Error(`Invalid response from Yahoo Finance: ${text.slice(0, 100)}...`);
+  }
   
   if (json.chart?.error) {
     throw new Error(json.chart.error.description || 'Yahoo Finance API error');
