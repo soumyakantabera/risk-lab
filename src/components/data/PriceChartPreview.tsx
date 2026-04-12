@@ -62,8 +62,8 @@ export function PriceChartPreview({ assets }: PriceChartPreviewProps) {
       sharpeRatio: number;
       maxDrawdown: number;
     }> = [];
-    let minDate = '';
-    let maxDate = '';
+    let minDateStr = '';
+    let maxDateStr = '';
 
     assets.forEach((asset, index) => {
       const color = CHART_COLORS[index % CHART_COLORS.length];
@@ -72,8 +72,10 @@ export function PriceChartPreview({ assets }: PriceChartPreviewProps) {
       const prices = sliced.map(d => d.close);
 
       if (dates.length > 0) {
-        if (!minDate || dates[0] < minDate) minDate = dates[0];
-        if (!maxDate || dates[dates.length - 1] > maxDate) maxDate = dates[dates.length - 1];
+        const first = String(dates[0]);
+        const last = String(dates[dates.length - 1]);
+        if (!minDateStr || first < minDateStr) minDateStr = first;
+        if (!maxDateStr || last > maxDateStr) maxDateStr = last;
       }
 
       const firstPrice = prices[0] || 1;
