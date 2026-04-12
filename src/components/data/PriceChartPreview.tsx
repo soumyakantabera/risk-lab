@@ -118,7 +118,7 @@ export function PriceChartPreview({ assets }: PriceChartPreviewProps) {
       });
     });
 
-    return { percentTraces: percentData, priceTraces: priceData, stats: assetStats, dateRange: { min: minDate, max: maxDate } };
+    return { percentTraces: percentData, priceTraces: priceData, stats: assetStats, dateRange: { min: minDateStr, max: maxDateStr } };
   }, [assets, startIdx, endIdx]);
 
   const traces = mode === 'percent' ? percentTraces : priceTraces;
