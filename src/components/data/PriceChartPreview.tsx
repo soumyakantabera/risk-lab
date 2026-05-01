@@ -174,7 +174,7 @@ export function PriceChartPreview({ assets }: PriceChartPreviewProps) {
               <TrendingUp className="h-4 w-4 text-primary" />
               Price Preview
             </CardTitle>
-            <div className="flex items-center gap-1 p-0.5 bg-muted rounded-lg">
+            <div className="flex items-center gap-1 p-0.5 bg-muted rounded-lg flex-wrap">
               <Button variant={mode === 'percent' ? 'default' : 'ghost'} size="sm" onClick={() => setMode('percent')} className="h-7 px-2 text-xs gap-1">
                 <Percent className="h-3 w-3" /> % Change
               </Button>

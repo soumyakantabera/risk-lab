@@ -391,14 +391,14 @@ export function MarketDataFetcher() {
       <CardContent className="space-y-6">
         {/* Cache Status */}
         {cacheStats.count > 0 && (
-          <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-            <div className="flex items-center gap-2">
-              <Database className="h-4 w-4 text-muted-foreground" />
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 bg-muted/50 rounded-lg">
+            <div className="flex flex-wrap items-center gap-2 min-w-0">
+              <Database className="h-4 w-4 text-muted-foreground shrink-0" />
               <span className="text-sm">
                 <strong>{cacheStats.count}</strong> cached items ({formatBytes(cacheStats.totalSize)})
               </span>
               {cacheStats.symbols.length > 0 && (
-                <span className="text-xs text-muted-foreground">
+                <span className="text-xs text-muted-foreground truncate">
                   • {cacheStats.symbols.slice(0, 5).join(', ')}
                   {cacheStats.symbols.length > 5 && ` +${cacheStats.symbols.length - 5} more`}
                 </span>
@@ -408,7 +408,7 @@ export function MarketDataFetcher() {
               variant="ghost"
               size="sm"
               onClick={handleClearCache}
-              className="text-xs h-7"
+              className="text-xs h-7 self-start sm:self-auto"
             >
               <Trash2 className="h-3 w-3 mr-1" />
               Clear
@@ -528,7 +528,7 @@ export function MarketDataFetcher() {
         </div>
 
         {/* Date Range & Options */}
-        <div className="flex flex-wrap gap-4 items-end">
+        <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 sm:gap-4 sm:items-end">
           <div className="space-y-2 flex-1 min-w-[140px]">
             <Label className="text-sm font-medium">Date Range</Label>
             <Select value={dateRange} onValueChange={setDateRange}>
@@ -544,13 +544,13 @@ export function MarketDataFetcher() {
               </SelectContent>
             </Select>
           </div>
-          
-          <div className="flex items-center gap-2 pb-0.5">
+
+          <div className="flex items-center gap-2 sm:pb-0.5">
             <Button
               variant={forceRefresh ? 'default' : 'outline'}
               size="sm"
               onClick={() => setForceRefresh(!forceRefresh)}
-              className="text-xs h-9"
+              className="text-xs h-9 w-full sm:w-auto"
             >
               <RefreshCw className={`h-3 w-3 mr-1 ${forceRefresh ? 'animate-spin' : ''}`} />
               {forceRefresh ? 'Force Refresh ON' : 'Use Cache'}
