@@ -90,19 +90,19 @@ export default function ReportsPage() {
   
   return (
     <div className="space-y-6 fade-in">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Reports & Export</h1>
           <p className="text-muted-foreground text-sm">
             Export data and generate risk reports
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={exportToCSV} className="gap-2">
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={exportToCSV} className="gap-2 flex-1 sm:flex-initial">
             <FileSpreadsheet className="h-4 w-4" />
             Export CSV
           </Button>
-          <Button onClick={printReport} className="gap-2">
+          <Button onClick={printReport} className="gap-2 flex-1 sm:flex-initial">
             <Printer className="h-4 w-4" />
             Print Report
           </Button>
@@ -191,6 +191,7 @@ export default function ReportsPage() {
             <h3 className="text-lg font-semibold mb-4 border-b border-border pb-2">
               Model Comparison (1-Day, 95% Confidence)
             </h3>
+            <div className="table-scroll">
             <Table className="data-table">
               <TableHeader>
                 <TableRow>
@@ -217,6 +218,7 @@ export default function ReportsPage() {
                 })}
               </TableBody>
             </Table>
+            </div>
           </section>
           
           {/* Distribution Chart */}
