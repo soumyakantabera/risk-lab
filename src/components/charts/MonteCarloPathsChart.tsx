@@ -1,5 +1,6 @@
 // Monte Carlo simulation paths visualization
 import Plot from 'react-plotly.js';
+import { useChartTheme } from '@/hooks/useChartTheme';
 
 interface MonteCarloPathsChartProps {
   returns: number[];
@@ -16,6 +17,7 @@ export function MonteCarloPathsChart({
   horizon = 30,
   title = 'Monte Carlo Simulation Paths',
 }: MonteCarloPathsChartProps) {
+  const theme = useChartTheme();
   if (returns.length < 20) {
     return (
       <div className="h-[350px] flex items-center justify-center text-muted-foreground">
@@ -166,21 +168,21 @@ export function MonteCarloPathsChart({
       <Plot
         data={traces}
         layout={{
-          title: title ? { text: title, font: { size: 14, color: '#94a3b8' } } : undefined,
+          title: title ? { text: title, font: { size: 14, color: theme.fg } } : undefined,
           height: 350,
           margin: { l: 60, r: 30, t: title ? 40 : 20, b: 50 },
           paper_bgcolor: 'transparent',
           plot_bgcolor: 'transparent',
-          font: { color: '#94a3b8', size: 11 },
+          font: { color: theme.mutedFg, size: 11 },
           xaxis: {
             title: { text: 'Days', font: { size: 11 } },
-            gridcolor: 'rgba(148, 163, 184, 0.1)',
-            zerolinecolor: 'rgba(148, 163, 184, 0.2)',
+            gridcolor: theme.grid,
+            zerolinecolor: theme.zeroLine,
           },
           yaxis: {
             title: { text: 'Portfolio Value ($)', font: { size: 11 } },
-            gridcolor: 'rgba(148, 163, 184, 0.1)',
-            zerolinecolor: 'rgba(148, 163, 184, 0.2)',
+            gridcolor: theme.grid,
+            zerolinecolor: theme.zeroLine,
             tickformat: ',.0f',
           },
           legend: {

@@ -2,6 +2,7 @@
 import { useMemo } from 'react';
 import Plot from 'react-plotly.js';
 import { mean, stdDev } from '@/lib/risk/statistics';
+import { useChartTheme } from '@/hooks/useChartTheme';
 import type { Data, Layout } from 'plotly.js';
 
 interface ReturnsHistogramProps {
@@ -19,6 +20,7 @@ export function ReturnsHistogram({
   title = 'Returns Distribution',
   showFittedCurve = true,
 }: ReturnsHistogramProps) {
+  const theme = useChartTheme();
   const chartData = useMemo(() => {
     if (returns.length === 0) return { data: [], layout: {} };
     
@@ -113,22 +115,22 @@ export function ReturnsHistogram({
     const layout: Partial<Layout> = {
       title: {
         text: title,
-        font: { color: 'hsl(210, 40%, 98%)', size: 14 },
+        font: { color: theme.fg, size: 14 },
       },
       paper_bgcolor: 'transparent',
       plot_bgcolor: 'transparent',
-      font: { color: 'hsl(215, 20%, 55%)', family: 'Inter, sans-serif' },
+      font: { color: theme.mutedFg, family: 'Inter, sans-serif' },
       margin: { l: 50, r: 30, t: 40, b: 50 },
       xaxis: {
         title: { text: 'Returns (%)', standoff: 10 },
-        gridcolor: 'hsl(217, 33%, 17%)',
-        zerolinecolor: 'hsl(217, 33%, 25%)',
+        gridcolor: theme.grid,
+        zerolinecolor: theme.zeroLine,
         tickformat: '.1f',
       },
       yaxis: {
         title: { text: 'Density', standoff: 10 },
-        gridcolor: 'hsl(217, 33%, 17%)',
-        zerolinecolor: 'hsl(217, 33%, 25%)',
+        gridcolor: theme.grid,
+        zerolinecolor: theme.zeroLine,
       },
       yaxis2: {
         overlaying: 'y',
@@ -146,7 +148,7 @@ export function ReturnsHistogram({
     };
     
     return { data, layout };
-  }, [returns, varValue, esValue, title, showFittedCurve]);
+  }, [returns, varValue, esValue, title, showFittedCurve, theme]);
   
   if (returns.length === 0) {
     return (

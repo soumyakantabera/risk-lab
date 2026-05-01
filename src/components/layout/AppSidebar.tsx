@@ -40,7 +40,7 @@ export function AppSidebar() {
   const { isDarkMode, toggleDarkMode } = useRisk();
   
   return (
-    <Sidebar className="border-r border-sidebar-border">
+    <Sidebar collapsible="offcanvas" className="border-r border-sidebar-border">
       <SidebarHeader className="border-b border-sidebar-border px-4 py-4">
         <RouterNavLink to="/" className="flex items-center gap-3 group">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">

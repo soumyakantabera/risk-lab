@@ -206,7 +206,7 @@ export default function StressPage() {
       {/* Results Table */}
       <Card className="glass-card">
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
               <CardTitle className="text-base font-semibold flex items-center gap-2">
                 <Zap className="h-4 w-4 text-primary" />
@@ -216,12 +216,13 @@ export default function StressPage() {
                 Impact on 1-day 95% VaR and Expected Shortfall
               </CardDescription>
             </div>
-            <Badge variant="outline" className="font-mono">
+            <Badge variant="outline" className="font-mono self-start sm:self-auto">
               Portfolio: {formatCurrency(portfolioValue)}
             </Badge>
           </div>
         </CardHeader>
         <CardContent>
+          <div className="table-scroll">
           <Table className="data-table">
             <TableHeader>
               <TableRow className="border-border/30">
@@ -271,6 +272,7 @@ export default function StressPage() {
               ))}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
       

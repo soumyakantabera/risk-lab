@@ -124,8 +124,8 @@ export default function BacktestPage() {
       </div>
       
       {/* Controls */}
-      <div className="flex flex-wrap gap-6 items-end">
-        <div className="space-y-2 min-w-[200px]">
+      <div className="flex flex-wrap gap-4 sm:gap-6 items-end">
+        <div className="space-y-2 w-full sm:min-w-[200px] sm:w-auto">
           <Label className="text-xs text-muted-foreground">
             Rolling Window: {window} days
           </Label>
@@ -135,29 +135,29 @@ export default function BacktestPage() {
             min={50}
             max={Math.min(500, returns.length - 50)}
             step={10}
-            className="w-48"
+            className="w-full sm:w-48"
           />
         </div>
-        
-        <div className="space-y-2">
+
+        <div className="space-y-2 w-full sm:w-auto">
           <Label className="text-xs text-muted-foreground">Confidence</Label>
           <Tabs value={String(confidence)} onValueChange={(v) => setConfidence(Number(v) as ConfidenceLevel)}>
-            <TabsList>
-              <TabsTrigger value="90">90%</TabsTrigger>
-              <TabsTrigger value="95">95%</TabsTrigger>
-              <TabsTrigger value="99">99%</TabsTrigger>
+            <TabsList className="w-full sm:w-auto">
+              <TabsTrigger value="90" className="flex-1 sm:flex-initial">90%</TabsTrigger>
+              <TabsTrigger value="95" className="flex-1 sm:flex-initial">95%</TabsTrigger>
+              <TabsTrigger value="99" className="flex-1 sm:flex-initial">99%</TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
-        
-        <div className="space-y-2">
+
+        <div className="space-y-2 w-full sm:w-auto">
           <Label className="text-xs text-muted-foreground">Model</Label>
           <Tabs value={model} onValueChange={(v) => setModel(v as ModelType)}>
-            <TabsList>
-              <TabsTrigger value="historical">Historical</TabsTrigger>
-              <TabsTrigger value="gaussian">Gaussian</TabsTrigger>
-              <TabsTrigger value="ewma">EWMA</TabsTrigger>
-              <TabsTrigger value="garch">GARCH</TabsTrigger>
+            <TabsList className="w-full sm:w-auto">
+              <TabsTrigger value="historical" className="flex-1 sm:flex-initial">Historical</TabsTrigger>
+              <TabsTrigger value="gaussian" className="flex-1 sm:flex-initial">Gaussian</TabsTrigger>
+              <TabsTrigger value="ewma" className="flex-1 sm:flex-initial">EWMA</TabsTrigger>
+              <TabsTrigger value="garch" className="flex-1 sm:flex-initial">GARCH</TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
@@ -180,7 +180,7 @@ export default function BacktestPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Traffic Light Visual */}
-            <div className="flex items-center gap-6">
+            <div className="flex flex-wrap items-center gap-4 sm:gap-6">
               <div className="flex items-center gap-2">
                 <div className={`h-8 w-8 rounded-full flex items-center justify-center ${baselZone.zone === 'green' ? 'bg-success ring-4 ring-success/30' : 'bg-success/20'}`}>
                   {baselZone.zone === 'green' && <CheckCircle className="h-5 w-5 text-success-foreground" />}
@@ -400,7 +400,7 @@ export default function BacktestPage() {
             <CardDescription>Days where actual loss exceeded VaR</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="max-h-[300px] overflow-auto">
+            <div className="max-h-[300px] overflow-auto table-scroll">
               <Table className="data-table">
                 <TableHeader>
                   <TableRow className="border-border/30">

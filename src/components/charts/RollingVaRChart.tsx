@@ -1,6 +1,7 @@
 // Rolling VaR/ES Time Series Chart
 import { useMemo } from 'react';
 import Plot from 'react-plotly.js';
+import { useChartTheme } from '@/hooks/useChartTheme';
 import type { BacktestResult } from '@/lib/risk/types';
 import type { Data, Layout } from 'plotly.js';
 
@@ -15,17 +16,19 @@ export function RollingVaRChart({
   title = 'Rolling VaR Backtest',
   showExceptions = true,
 }: RollingVaRChartProps) {
+  const theme = useChartTheme();
+
   const chartData = useMemo(() => {
     if (results.length === 0) return { data: [], layout: {} };
-    
+
     const dates = results.map(r => r.date);
     const actualReturns = results.map(r => r.actualReturn * 100);
-    const varValues = results.map(r => -r.predictedVaR * 100); // Negative for display
+    const varValues = results.map(r => -r.predictedVaR * 100);
     const esValues = results.map(r => -r.predictedES * 100);
-    
+
     const exceptionDates = results.filter(r => r.exception).map(r => r.date);
     const exceptionReturns = results.filter(r => r.exception).map(r => r.actualReturn * 100);
-    
+
     const data: Data[] = [
       {
         x: dates,
@@ -33,10 +36,7 @@ export function RollingVaRChart({
         type: 'scatter',
         mode: 'lines',
         name: 'Actual Returns',
-        line: {
-          color: 'hsl(173, 80%, 45%)',
-          width: 1,
-        },
+        line: { color: 'hsl(173, 80%, 45%)', width: 1 },
         fill: 'tozeroy',
         fillcolor: 'hsla(173, 80%, 45%, 0.1)',
       },
@@ -46,11 +46,7 @@ export function RollingVaRChart({
         type: 'scatter',
         mode: 'lines',
         name: 'VaR Threshold',
-        line: {
-          color: 'hsl(0, 72%, 55%)',
-          width: 2,
-          dash: 'dash',
-        },
+        line: { color: 'hsl(0, 72%, 55%)', width: 2, dash: 'dash' },
       },
       {
         x: dates,
@@ -58,14 +54,10 @@ export function RollingVaRChart({
         type: 'scatter',
         mode: 'lines',
         name: 'ES Threshold',
-        line: {
-          color: 'hsl(38, 92%, 50%)',
-          width: 2,
-          dash: 'dot',
-        },
+        line: { color: 'hsl(38, 92%, 50%)', width: 2, dash: 'dot' },
       },
     ];
-    
+
     if (showExceptions && exceptionDates.length > 0) {
       data.push({
         x: exceptionDates,
@@ -77,48 +69,37 @@ export function RollingVaRChart({
           color: 'hsl(0, 72%, 55%)',
           size: 8,
           symbol: 'x',
-          line: {
-            color: 'hsl(0, 72%, 40%)',
-            width: 2,
-          },
+          line: { color: 'hsl(0, 72%, 40%)', width: 2 },
         },
       });
     }
-    
+
     const layout: Partial<Layout> = {
-      title: {
-        text: title,
-        font: { color: 'hsl(210, 40%, 98%)', size: 14 },
-      },
+      title: { text: title, font: { color: theme.fg, size: 14 } },
       paper_bgcolor: 'transparent',
       plot_bgcolor: 'transparent',
-      font: { color: 'hsl(215, 20%, 55%)', family: 'Inter, sans-serif' },
+      font: { color: theme.mutedFg, family: 'Inter, sans-serif' },
       margin: { l: 50, r: 30, t: 40, b: 50 },
       xaxis: {
         title: { text: 'Date', standoff: 10 },
-        gridcolor: 'hsl(217, 33%, 17%)',
-        zerolinecolor: 'hsl(217, 33%, 25%)',
+        gridcolor: theme.grid,
+        zerolinecolor: theme.zeroLine,
         type: 'date',
       },
       yaxis: {
         title: { text: 'Return (%)', standoff: 10 },
-        gridcolor: 'hsl(217, 33%, 17%)',
-        zerolinecolor: 'hsl(217, 33%, 25%)',
+        gridcolor: theme.grid,
+        zerolinecolor: theme.zeroLine,
         tickformat: '.2f',
       },
-      legend: {
-        x: 0,
-        y: 1.15,
-        orientation: 'h',
-        bgcolor: 'transparent',
-      },
+      legend: { x: 0, y: 1.15, orientation: 'h', bgcolor: 'transparent' },
       hovermode: 'x unified',
       showlegend: true,
     };
-    
+
     return { data, layout };
-  }, [results, title, showExceptions]);
-  
+  }, [results, title, showExceptions, theme]);
+
   if (results.length === 0) {
     return (
       <div className="flex h-[300px] items-center justify-center text-muted-foreground">
@@ -126,7 +107,7 @@ export function RollingVaRChart({
       </div>
     );
   }
-  
+
   return (
     <Plot
       data={chartData.data}
@@ -138,11 +119,11 @@ export function RollingVaRChart({
         responsive: true,
       }}
       style={{ width: '100%', height: '350px' }}
+      useResizeHandler
     />
   );
 }
 
-// Simple returns time series
 interface ReturnsTimeSeriesProps {
   returns: number[];
   dates: Date[];
@@ -154,11 +135,13 @@ export function ReturnsTimeSeries({
   dates,
   title = 'Returns Time Series',
 }: ReturnsTimeSeriesProps) {
+  const theme = useChartTheme();
+
   const chartData = useMemo(() => {
     if (returns.length === 0) return { data: [], layout: {} };
-    
+
     const returnsPercent = returns.map(r => r * 100);
-    
+
     const data: Data[] = [
       {
         x: dates,
@@ -166,42 +149,36 @@ export function ReturnsTimeSeries({
         type: 'scatter',
         mode: 'lines',
         name: 'Returns',
-        line: {
-          color: 'hsl(173, 80%, 45%)',
-          width: 1,
-        },
+        line: { color: 'hsl(173, 80%, 45%)', width: 1 },
         fill: 'tozeroy',
         fillcolor: 'hsla(173, 80%, 45%, 0.1)',
       },
     ];
-    
+
     const layout: Partial<Layout> = {
-      title: {
-        text: title,
-        font: { color: 'hsl(210, 40%, 98%)', size: 14 },
-      },
+      title: { text: title, font: { color: theme.fg, size: 14 } },
       paper_bgcolor: 'transparent',
       plot_bgcolor: 'transparent',
-      font: { color: 'hsl(215, 20%, 55%)', family: 'Inter, sans-serif' },
+      font: { color: theme.mutedFg, family: 'Inter, sans-serif' },
       margin: { l: 50, r: 30, t: 40, b: 50 },
       xaxis: {
-        gridcolor: 'hsl(217, 33%, 17%)',
-        zerolinecolor: 'hsl(217, 33%, 25%)',
+        gridcolor: theme.grid,
+        zerolinecolor: theme.zeroLine,
         type: 'date',
       },
       yaxis: {
         title: { text: 'Return (%)', standoff: 10 },
-        gridcolor: 'hsl(217, 33%, 17%)',
-        zerolinecolor: 'hsl(217, 33%, 25%)',
+        gridcolor: theme.grid,
+        zerolinecolor: theme.zeroLine,
         tickformat: '.2f',
       },
       hovermode: 'x unified',
       showlegend: false,
     };
-    
+
     return { data, layout };
-  }, [returns, dates, title]);
-  
+  }, [returns, dates, title, theme]);
+
   if (returns.length === 0) {
     return (
       <div className="flex h-[250px] items-center justify-center text-muted-foreground">
@@ -209,16 +186,14 @@ export function ReturnsTimeSeries({
       </div>
     );
   }
-  
+
   return (
     <Plot
       data={chartData.data}
       layout={chartData.layout}
-      config={{
-        displayModeBar: false,
-        responsive: true,
-      }}
+      config={{ displayModeBar: false, responsive: true }}
       style={{ width: '100%', height: '250px' }}
+      useResizeHandler
     />
   );
 }

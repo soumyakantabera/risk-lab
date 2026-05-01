@@ -64,7 +64,7 @@ export default function OverviewPage() {
       </div>
       
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 sm:gap-4">
         <KPICard
           title="VaR (95%)"
           value={var95 ? formatCurrency(var95.var) : '-'}
@@ -140,7 +140,7 @@ export default function OverviewPage() {
       {/* Model Comparison */}
       <Card className="glass-card">
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <CardTitle className="text-base font-semibold">Model Comparison</CardTitle>
             <Tabs value={String(selectedConfidence)} onValueChange={(v) => setSelectedConfidence(Number(v) as ConfidenceLevel)}>
               <TabsList className="h-8">
@@ -153,11 +153,13 @@ export default function OverviewPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <ModelResultsTable 
-            results={modelResults} 
-            confidence={selectedConfidence}
-            horizon={1}
-          />
+          <div className="table-scroll">
+            <ModelResultsTable
+              results={modelResults}
+              confidence={selectedConfidence}
+              horizon={1}
+            />
+          </div>
         </CardContent>
       </Card>
       
@@ -228,7 +230,9 @@ export default function OverviewPage() {
           <CardTitle className="text-base font-semibold">VaR Across Confidence Levels (1-Day)</CardTitle>
         </CardHeader>
         <CardContent>
-          <FullModelComparison results={modelResults} horizon={1} />
+          <div className="table-scroll">
+            <FullModelComparison results={modelResults} horizon={1} />
+          </div>
         </CardContent>
       </Card>
     </div>

@@ -323,13 +323,13 @@ export default function DataPage() {
           {assets.length > 1 && (
             <Card className="glass-card">
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <div>
                     <CardTitle className="text-base font-semibold">Portfolio Weights</CardTitle>
                     <CardDescription>Adjust allocation across assets</CardDescription>
                   </div>
                   {!weightsValid && (
-                    <Badge variant="destructive" className="gap-1">
+                    <Badge variant="destructive" className="gap-1 self-start sm:self-auto">
                       <AlertCircle className="h-3 w-3" />
                       Weights sum to {(weightSum * 100).toFixed(1)}%
                     </Badge>
@@ -337,12 +337,13 @@ export default function DataPage() {
                 </div>
               </CardHeader>
               <CardContent>
+                <div className="table-scroll">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Asset</TableHead>
                       <TableHead>Weight</TableHead>
-                      <TableHead className="w-[300px]">Allocation</TableHead>
+                      <TableHead className="w-[200px] sm:w-[300px]">Allocation</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -365,6 +366,7 @@ export default function DataPage() {
                     ))}
                   </TableBody>
                 </Table>
+                </div>
               </CardContent>
             </Card>
           )}
