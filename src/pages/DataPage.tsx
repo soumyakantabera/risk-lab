@@ -337,12 +337,13 @@ export default function DataPage() {
                 </div>
               </CardHeader>
               <CardContent>
+                <div className="table-scroll">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Asset</TableHead>
                       <TableHead>Weight</TableHead>
-                      <TableHead className="w-[300px]">Allocation</TableHead>
+                      <TableHead className="w-[200px] sm:w-[300px]">Allocation</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -365,6 +366,7 @@ export default function DataPage() {
                     ))}
                   </TableBody>
                 </Table>
+                </div>
               </CardContent>
             </Card>
           )}
