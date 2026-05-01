@@ -149,11 +149,11 @@
 
   /* KPI card with glow */
   .kpi-card {
-    @apply relative overflow-hidden rounded-lg border border-border/30 bg-card p-5;
+    @apply relative overflow-hidden rounded-lg border border-border/30 bg-card p-4 sm:p-5;
     background: linear-gradient(
       145deg,
       hsl(var(--card)),
-      hsl(222 47% 7%)
+      hsl(var(--muted) / 0.4)
     );
   }
 
@@ -206,6 +206,11 @@
   /* Chart container */
   .chart-container {
     @apply rounded-lg border border-border/30 bg-card/50 p-4;
+  }
+
+  /* Horizontal scroll wrapper for tables on small screens */
+  .table-scroll {
+    @apply -mx-4 px-4 sm:mx-0 sm:px-0 overflow-x-auto;
   }
 
   /* Animated gradient border */
