@@ -95,29 +95,29 @@ export default function ModelsPage() {
       
       {/* Controls */}
       <div className="flex flex-wrap gap-4 items-end">
-        <div className="space-y-2">
+        <div className="space-y-2 w-full sm:w-auto">
           <Label className="text-xs text-muted-foreground">Confidence Level</Label>
           <Tabs value={String(selectedConfidence)} onValueChange={(v) => setSelectedConfidence(Number(v) as ConfidenceLevel)}>
-            <TabsList>
-              <TabsTrigger value="90">90%</TabsTrigger>
-              <TabsTrigger value="95">95%</TabsTrigger>
-              <TabsTrigger value="97.5">97.5%</TabsTrigger>
-              <TabsTrigger value="99">99%</TabsTrigger>
+            <TabsList className="w-full sm:w-auto">
+              <TabsTrigger value="90" className="flex-1 sm:flex-initial">90%</TabsTrigger>
+              <TabsTrigger value="95" className="flex-1 sm:flex-initial">95%</TabsTrigger>
+              <TabsTrigger value="97.5" className="flex-1 sm:flex-initial">97.5%</TabsTrigger>
+              <TabsTrigger value="99" className="flex-1 sm:flex-initial">99%</TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
-        
-        <div className="space-y-2">
+
+        <div className="space-y-2 w-full sm:w-auto">
           <Label className="text-xs text-muted-foreground">Time Horizon</Label>
           <Tabs value={String(selectedHorizon)} onValueChange={(v) => setSelectedHorizon(Number(v) as TimeHorizon)}>
-            <TabsList>
-              <TabsTrigger value="1">1 Day</TabsTrigger>
-              <TabsTrigger value="10">10 Days</TabsTrigger>
+            <TabsList className="w-full sm:w-auto">
+              <TabsTrigger value="1" className="flex-1 sm:flex-initial">1 Day</TabsTrigger>
+              <TabsTrigger value="10" className="flex-1 sm:flex-initial">10 Days</TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
-        
-        <div className="space-y-2 min-w-[200px]">
+
+        <div className="space-y-2 w-full sm:min-w-[200px] sm:w-auto">
           <div className="flex items-center gap-2">
             <Label className="text-xs text-muted-foreground">EWMA Lambda</Label>
             <Tooltip>
@@ -136,9 +136,9 @@ export default function ModelsPage() {
               min={0.8}
               max={0.99}
               step={0.01}
-              className="w-32"
+              className="flex-1 sm:w-32"
             />
-            <span className="font-mono text-sm w-12">{ewmaLambda.toFixed(2)}</span>
+            <span className="font-mono text-sm w-12 shrink-0">{ewmaLambda.toFixed(2)}</span>
           </div>
         </div>
       </div>
@@ -186,6 +186,7 @@ export default function ModelsPage() {
           </div>
         </CardHeader>
         <CardContent>
+          <div className="table-scroll">
           <Table className="data-table">
             <TableHeader>
               <TableRow className="border-border/30">
@@ -243,6 +244,7 @@ export default function ModelsPage() {
               })}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
       
@@ -252,6 +254,7 @@ export default function ModelsPage() {
           <CardTitle className="text-base font-semibold">Estimated Parameters</CardTitle>
         </CardHeader>
         <CardContent>
+          <div className="table-scroll">
           <Table className="data-table">
             <TableHeader>
               <TableRow className="border-border/30">
@@ -300,6 +303,7 @@ export default function ModelsPage() {
               ))}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
       
